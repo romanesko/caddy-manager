@@ -48,6 +48,12 @@ wget -O - https://raw.githubusercontent.com/romanesko/caddy-manager/main/install
 curl -sSL https://raw.githubusercontent.com/romanesko/caddy-manager/main/install.sh | bash
 ```
 
+**Alternative (if the above doesn't work due to caching):**
+
+```bash
+curl -sSL "https://raw.githubusercontent.com/romanesko/caddy-manager/main/install.sh?$(date +%s)" | bash
+```
+
 The installer will:
 - ✅ Automatically detect your system (Linux/macOS, AMD64/ARM64)
 - ✅ Download the correct version for your platform
