@@ -1,0 +1,998 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Caddy Manager</title>
+    
+    <!-- Tabler CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta17/dist/css/tabler.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/3.34.1/tabler-icons.min.css" integrity="sha512-s0zOeW/zxh8f817uykbgBqmx1dwmdvWwQYamh+lU9NzP8jeQ/ikNPE9dBK+C55A5WUtOetZAI09tLxKIj0r9WQ==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    
+    <style>
+        .domain-row {
+            transition: background-color 0.2s;
+        }
+        
+        .domain-row:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .status-success {
+            color: #206c39;
+        }
+        
+        .status-error {
+            color: #d63939;
+        }
+        
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .form-control-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.875rem;
+        }
+        
+        .port-status {
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+        
+        .port-status.alive {
+            color: #206c39;
+        }
+        
+        .port-status.dead {
+            color: #d63939;
+        }
+        
+        .port-status.checking {
+            color: #f59f00;
+            animation: pulse 1s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+        
+        .sort-icon {
+            opacity: 0.5;
+            transition: opacity 0.2s;
+        }
+        
+        th:hover .sort-icon {
+            opacity: 1;
+        }
+        
+        .sort-icon.active {
+            opacity: 1;
+        }
+        
+        .sort-icon.sort-asc {
+            transform: rotate(180deg);
+        }
+    </style>
+</head>
+<body>
+    <div class="page">
+        <!-- Header -->
+        <header class="navbar navbar-expand-md navbar-light d-print-none">
+            <div class="container-xl">
+                <h1 class="navbar-brand navbar-brand-autodark d-none-navbar-horizontal pe-0 pe-md-3">
+                    <a href=".">
+                        <i class="ti ti-server me-2"></i>
+                        Caddy Manager
+                    </a>
+                </h1>
+            </div>
+        </header>
+        
+        <div class="page-wrapper">
+            <!-- Page header -->
+            <div class="page-header d-print-none">
+                <div class="container-xl">
+                    <div class="row g-2 align-items-center">
+                        <div class="col">
+                            <h2 class="page-title">
+                                Caddyfile Manager
+                            </h2>
+                        </div>
+                        <div class="col-auto ms-auto d-print-none">
+                            <div class="btn-list">
+                                <button id="addDomainBtn" class="btn btn-primary">
+                                    <i class="ti ti-plus me-1"></i>
+                                    Add Domain
+                                </button>
+                                <button id="previewBtn" class="btn btn-info">
+                                    <i class="ti ti-eye me-1"></i>
+                                    Preview
+                                </button>
+                                <button id="checkPortsBtn" class="btn btn-warning">
+                                    <i class="ti ti-wifi me-1"></i>
+                                    Check Ports
+                                </button>
+                                <button id="saveBtn" class="btn btn-success">
+                                    <i class="ti ti-device-floppy me-1"></i>
+                                    Save & Restart
+                                </button>
+                                <button id="backupBtn" class="btn btn-secondary">
+                                    <i class="ti ti-download me-1"></i>
+                                    Create Backup
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Page body -->
+            <div class="page-body">
+                <div class="container-xl">
+                    <div class="row">
+                        <!-- Domains Table -->
+                        <div class="col-12" id="domainsColumn">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">Domains Configuration</h3>
+                                    <div class="card-actions">
+                                        <button class="btn btn-outline-secondary btn-sm" onclick="toggleBackupPanel(event)">
+                                            <i class="ti ti-database me-1"></i>
+                                            Show Backups
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-vcenter">
+                                            <thead>
+                                                <tr>
+                                                    <th style="width: 20%; cursor: pointer;" onclick="sortTable(0)">
+                                                        Domain <i class="ti ti-arrows-sort sort-icon" id="sort-icon-0"></i>
+                                                    </th>
+                                                    <th style="width: 12%;">Type</th>
+                                                    <th style="width: 15%; cursor: pointer;" onclick="sortTable(2)">
+                                                        Target/Port <i class="ti ti-arrows-sort sort-icon" id="sort-icon-2"></i>
+                                                    </th>
+                                                    <th style="width: 8%;">Status</th>
+                                                    <th style="width: 12%;">Max Body Size</th>
+                                                    <th style="width: 8%;">Timeout (s)</th>
+                                                    <th style="width: 15%;">Actions</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="domainsTable">
+                                                <!-- Domains will be loaded here -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Backups Panel (hidden by default) -->
+                        <div class="col-lg-4" id="backupsColumn" style="display: none;">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3 class="card-title">
+                                        <a href="#" onclick="toggleBackupPanel(event)" style="text-decoration: none; color: inherit;">
+                                            Backups <i class="ti ti-chevron-up" id="backupToggleIcon"></i>
+                                        </a>
+                                    </h3>
+                                </div>
+                                <div class="card-body" id="backupPanelBody">
+                                    <div id="backupsList">
+                                        <div class="text-muted">Loading backups...</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Add Domain Modal -->
+    <div class="modal fade" id="addDomainModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Add New Domain</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="addDomainForm">
+                        <div class="mb-3">
+                            <label class="form-label">Domain</label>
+                            <input type="text" class="form-control" id="newDomain" placeholder="example.com" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Type</label>
+                            <select class="form-select" id="newType" required>
+                                <option value="reverse_proxy">Reverse Proxy</option>
+                                <option value="file_server">File Server</option>
+                            </select>
+                        </div>
+                        <div class="mb-3" id="targetGroup">
+                            <label class="form-label">Target/Port</label>
+                            <input type="text" class="form-control" id="newTarget" placeholder="8080 (for reverse proxy) or /path (for file server)">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Max Body Size</label>
+                            <input type="text" class="form-control" id="newMaxBody" placeholder="10MB">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Timeout (seconds)</label>
+                            <input type="number" class="form-control" id="newTimeout" placeholder="360">
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" id="saveDomainBtn">Add Domain</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@tabler/core@1.0.0-beta17/dist/js/tabler.min.js"></script>
+    
+    <script>
+        // API endpoints
+        const API_BASE = '/api';
+        
+        // Global variables
+        let domains = [];
+        let backups = [];
+        
+        // Domain class
+        class Domain {
+            constructor(domain, type, target, maxBody = '', timeout = '') {
+                this.domain = domain;
+                this.type = type;
+                this.target = target;
+                this.maxBody = maxBody;
+                this.timeout = timeout;
+            }
+            
+            // Get port from target (for reverse_proxy)
+            getPort() {
+                if (this.type === 'reverse_proxy' && this.target) {
+                    const match = this.target.match(/:(\d+)/);
+                    return match ? match[1] : '';
+                }
+                return '';
+            }
+            
+            // Set port for reverse_proxy
+            setPort(port) {
+                if (this.type === 'reverse_proxy') {
+                    this.target = `127.0.0.1:${port}`;
+                }
+            }
+            
+            toCaddyfile() {
+                let config = `${this.domain} {\n`;
+                
+                if (this.maxBody) {
+                    config += `        request_body {\n`;
+                    config += `                max_size ${this.maxBody}\n`;
+                    config += `        }\n`;
+                }
+                
+                if (this.type === 'reverse_proxy') {
+                    config += `        reverse_proxy ${this.target}`;
+                    if (this.timeout) {
+                        config += ` {\n`;
+                        config += `                transport http {\n`;
+                        config += `                        read_timeout ${this.timeout}s\n`;
+                        config += `                }\n`;
+                        config += `        }`;
+                    }
+                    config += `\n`;
+                } else if (this.type === 'file_server') {
+                    config += `        root * ${this.target}\n`;
+                    config += `        file_server browse\n`;
+                }
+                
+                config += `}\n`;
+                return config;
+            }
+        }
+        
+        // Parse Caddyfile content
+        function parseCaddyfile(content) {
+            const lines = content.split('\n');
+            const domains = [];
+            let currentDomain = null;
+            let braceCount = 0;
+            let inGlobalBlock = false;
+            let inSnippet = false;
+            let currentSnippet = '';
+            
+            // Track nested blocks
+            let inRequestBody = false;
+            let inReverseProxy = false;
+            let inTransport = false;
+            let inFileServer = false;
+            
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i].trim();
+                
+                // Skip comments and empty lines
+                if (!line || line.startsWith('#')) continue;
+                
+                // Count braces to track nesting
+                const openBraces = (line.match(/\{/g) || []).length;
+                const closeBraces = (line.match(/\}/g) || []).length;
+                braceCount += openBraces - closeBraces;
+                
+                // Check for global options block
+                if (line === '{' && braceCount === 1) {
+                    inGlobalBlock = true;
+                    continue;
+                }
+                
+                if (inGlobalBlock && braceCount === 0) {
+                    inGlobalBlock = false;
+                    continue;
+                }
+                
+                // Skip global block content
+                if (inGlobalBlock) continue;
+                
+                // Check for snippets (named blocks)
+                const snippetMatch = line.match(/^\(([^)]+)\)\s*\{$/);
+                if (snippetMatch) {
+                    inSnippet = true;
+                    currentSnippet = snippetMatch[1];
+                    continue;
+                }
+                
+                if (inSnippet && braceCount === 0) {
+                    inSnippet = false;
+                    currentSnippet = '';
+                    continue;
+                }
+                
+                // Skip snippet content
+                if (inSnippet) continue;
+                
+                // Check for site block start (address with opening brace)
+                // According to docs: "The first line of the Caddyfile is always the address(es) of the site to serve"
+                if (line.includes('{') && braceCount === 1) {
+                    // Extract address(es) - everything before the opening brace
+                    const addressPart = line.split('{')[0].trim();
+                    
+                    // Skip if this looks like a directive block (not an address)
+                    if (isDirectiveBlock(line)) continue;
+                    
+                    currentDomain = new Domain(addressPart, 'reverse_proxy', '');
+                    continue;
+                }
+                
+                // Process directives within site blocks
+                if (currentDomain && braceCount > 0) {
+                    processDirective(line, currentDomain);
+                }
+                
+                // Check for site block end
+                if (braceCount === 0 && currentDomain) {
+                    domains.push(currentDomain);
+                    currentDomain = null;
+                    resetBlockState();
+                }
+            }
+            
+            return domains;
+        }
+        
+        // Check if line looks like a directive block rather than an address
+        function isDirectiveBlock(line) {
+            const directiveKeywords = [
+                'request_body', 'reverse_proxy', 'transport', 'root', 'file_server',
+                'handle_path', 'respond', 'log', 'encode', 'php_fastcgi', 'handle_errors',
+                'header', 'redir', 'rewrite', 'try_files', 'gzip', 'browse'
+            ];
+            
+            const beforeBrace = line.split('{')[0].trim();
+            return directiveKeywords.some(keyword => beforeBrace.includes(keyword));
+        }
+        
+        // Process individual directives
+        function processDirective(line, domain) {
+            const directive = line.split(/\s+/)[0];
+            
+            switch (directive) {
+                case 'request_body':
+                    inRequestBody = true;
+                    break;
+                    
+                case 'max_size':
+                    if (inRequestBody) {
+                        const maxBody = line.split('max_size')[1].trim();
+                        domain.maxBody = maxBody;
+                        inRequestBody = false;
+                    }
+                    break;
+                    
+                case 'reverse_proxy':
+                    inReverseProxy = true;
+                    // Extract target(s) - everything after 'reverse_proxy'
+                    const targetPart = line.split('reverse_proxy')[1].trim();
+                    // Take first target if multiple
+                    const firstTarget = targetPart.split(/\s+/)[0];
+                    domain.target = firstTarget;
+                    
+                    // Extract port for display
+                    const portMatch = firstTarget.match(/:(\d+)/);
+                    if (portMatch) {
+                        domain.port = portMatch[1];
+                    }
+                    break;
+                    
+                case 'transport':
+                    if (inReverseProxy && line.includes('transport http')) {
+                        inTransport = true;
+                    }
+                    break;
+                    
+                case 'read_timeout':
+                    if (inTransport) {
+                        const timeoutMatch = line.match(/read_timeout\s+(\d+)s/);
+                        if (timeoutMatch) {
+                            domain.timeout = timeoutMatch[1];
+                        }
+                        inTransport = false;
+                        inReverseProxy = false;
+                    }
+                    break;
+                    
+                case 'root':
+                    if (line.includes('root *')) {
+                        const target = line.split('root *')[1].trim();
+                        domain.type = 'file_server';
+                        domain.target = target;
+                    }
+                    break;
+                    
+                case 'file_server':
+                    if (domain.type === 'file_server') {
+                        // file_server directive confirms this is a file server
+                        domain.type = 'file_server';
+                    }
+                    break;
+            }
+        }
+        
+        // Reset block state
+        function resetBlockState() {
+            inRequestBody = false;
+            inReverseProxy = false;
+            inTransport = false;
+            inFileServer = false;
+        }
+        
+        // Generate Caddyfile content from domains
+        function generateCaddyfile() {
+            return domains.map(domain => domain.toCaddyfile()).join('\n');
+        }
+        
+        // Load domains from API
+        async function loadDomains() {
+            try {
+                const response = await fetch(`${API_BASE}/caddyfile`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    domains = parseCaddyfile(data.content);
+                    displayDomains();
+                } else {
+                    showNotification('Error loading Caddyfile: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showNotification('Failed to load Caddyfile: ' + error.message, 'error');
+            }
+        }
+        
+        // Display domains in table
+        function displayDomains() {
+            const tbody = document.getElementById('domainsTable');
+            
+            if (domains.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted">No domains configured</td></tr>';
+                return;
+            }
+            
+            const html = domains.map((domain, index) => `
+                <tr class="domain-row" data-index="${index}">
+                    <td>
+                        <input type="text" class="form-control form-control-sm" value="${domain.domain}" 
+                               onchange="updateDomain(${index}, 'domain', this.value)">
+                    </td>
+                    <td>
+                        <select class="form-select form-select-sm" onchange="updateDomainType(${index}, this.value)">
+                            <option value="reverse_proxy" ${domain.type === 'reverse_proxy' ? 'selected' : ''}>Reverse Proxy</option>
+                            <option value="file_server" ${domain.type === 'file_server' ? 'selected' : ''}>File Server</option>
+                        </select>
+                    </td>
+                    <td>
+                        ${domain.type === 'reverse_proxy' 
+                            ? `<input type="number" class="form-control form-control-sm" value="${domain.getPort()}" 
+                                     placeholder="8080" onchange="updateDomainPort(${index}, this.value)">`
+                            : `<input type="text" class="form-control form-control-sm" value="${domain.target}" 
+                                     placeholder="/path" onchange="updateDomain(${index}, 'target', this.value)">`
+                        }
+                    </td>
+                    <td class="text-center">
+                        ${domain.type === 'reverse_proxy' 
+                            ? `<span class="port-status" data-port="${domain.getPort()}" title="Click to check port">
+                                 <i class="ti ti-circle-dot text-muted"></i>
+                               </span>`
+                            : `<span class="text-muted">-</span>`
+                        }
+                    </td>
+                    <td>
+                        <input type="text" class="form-control form-control-sm" value="${domain.maxBody}" 
+                               placeholder="10MB" onchange="updateDomain(${index}, 'maxBody', this.value)">
+                    </td>
+                    <td>
+                        <input type="number" class="form-control form-control-sm" value="${domain.timeout}" 
+                               placeholder="360" onchange="updateDomain(${index}, 'timeout', this.value)">
+                    </td>
+                    <td>
+                        <button class="btn btn-sm btn-danger" onclick="removeDomain(${index})">
+                            <i class="ti ti-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+            
+            tbody.innerHTML = html;
+        }
+        
+        // Update domain property
+        function updateDomain(index, property, value) {
+            if (domains[index]) {
+                domains[index][property] = value;
+            }
+        }
+        
+        // Update domain type
+        function updateDomainType(index, type) {
+            if (domains[index]) {
+                domains[index].type = type;
+                if (type === 'reverse_proxy') {
+                    domains[index].target = '127.0.0.1:8080';
+                } else {
+                    domains[index].target = '/path';
+                }
+                displayDomains();
+            }
+        }
+        
+        // Update domain port
+        function updateDomainPort(index, port) {
+            if (domains[index]) {
+                domains[index].setPort(port);
+            }
+        }
+        
+        // Remove domain
+        function removeDomain(index) {
+            if (confirm('Are you sure you want to remove this domain?')) {
+                domains.splice(index, 1);
+                displayDomains();
+            }
+        }
+        
+        // Add new domain
+        function addDomain() {
+            const domain = document.getElementById('newDomain').value;
+            const type = document.getElementById('newType').value;
+            const target = document.getElementById('newTarget').value;
+            const maxBody = document.getElementById('newMaxBody').value;
+            const timeout = document.getElementById('newTimeout').value;
+            
+            if (!domain) {
+                showNotification('Domain is required', 'error');
+                return;
+            }
+            
+            if (type === 'reverse_proxy' && !target) {
+                showNotification('Port is required for reverse proxy', 'error');
+                return;
+            }
+            
+            if (type === 'file_server' && !target) {
+                showNotification('Path is required for file server', 'error');
+                return;
+            }
+            
+            // Validate domain uniqueness
+            if (domains.some(d => d.domain === domain)) {
+                showNotification('Domain already exists', 'error');
+                return;
+            }
+            
+            // Validate port uniqueness for reverse_proxy
+            if (type === 'reverse_proxy') {
+                const port = target;
+                if (domains.some(d => d.type === 'reverse_proxy' && d.getPort() === port)) {
+                    showNotification('Port already used by another reverse proxy', 'error');
+                    return;
+                }
+            }
+            
+            let newDomain;
+            if (type === 'reverse_proxy') {
+                newDomain = new Domain(domain, type, `127.0.0.1:${target}`, maxBody, timeout);
+            } else {
+                newDomain = new Domain(domain, type, target, maxBody, timeout);
+            }
+            
+            domains.push(newDomain);
+            displayDomains();
+            
+            // Close modal and reset form
+            const modal = bootstrap.Modal.getInstance(document.getElementById('addDomainModal'));
+            modal.hide();
+            document.getElementById('addDomainForm').reset();
+        }
+        
+        // Global variable for port statuses
+        let portStatuses = {};
+        
+        // Preview Caddyfile
+        function previewCaddyfile() {
+            const content = generateCaddyfile();
+            const blob = new Blob([content], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const newWindow = window.open(url, '_blank');
+            
+            // Clean up the URL after a short delay
+            setTimeout(() => {
+                URL.revokeObjectURL(url);
+            }, 1000);
+        }
+        
+        // Check all ports
+        async function checkAllPorts() {
+            try {
+                const response = await fetch(`${API_BASE}/check-ports`);
+                const portStatuses = await response.json();
+                
+                if (response.ok) {
+                    // Update port statuses
+                    portStatuses.forEach(status => {
+                        updatePortStatus(status.port, status.status);
+                    });
+                    showNotification('Port check completed!', 'success');
+                } else {
+                    showNotification('Error checking ports: ' + portStatuses.error, 'error');
+                }
+            } catch (error) {
+                showNotification('Failed to check ports: ' + error.message, 'error');
+            }
+        }
+        
+        // Update port status in UI
+        function updatePortStatus(port, status) {
+            const statusElements = document.querySelectorAll(`[data-port="${port}"]`);
+            statusElements.forEach(element => {
+                const icon = element.querySelector('i');
+                element.className = `port-status ${status}`;
+                
+                switch (status) {
+                    case 'alive':
+                        icon.className = 'ti ti-circle-check';
+                        element.title = `Port ${port} is alive`;
+                        break;
+                    case 'dead':
+                        icon.className = 'ti ti-circle-x';
+                        element.title = `Port ${port} is dead`;
+                        break;
+                    default:
+                        icon.className = 'ti ti-circle-dot';
+                        element.title = `Port ${port} status unknown`;
+                }
+            });
+        }
+        
+        // Check individual port
+        async function checkIndividualPort(port) {
+            const statusElement = document.querySelector(`[data-port="${port}"]`);
+            if (statusElement) {
+                statusElement.className = 'port-status checking';
+                statusElement.querySelector('i').className = 'ti ti-loader';
+                statusElement.title = `Checking port ${port}...`;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/check-ports`);
+                const portStatuses = await response.json();
+                
+                if (response.ok) {
+                    const portStatus = portStatuses.find(s => s.port === port);
+                    if (portStatus) {
+                        updatePortStatus(port, portStatus.status);
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to check port:', error);
+            }
+        }
+        
+        // Save and restart
+        async function saveAndRestart() {
+            const content = generateCaddyfile();
+            
+            try {
+                // Save Caddyfile
+                const saveResponse = await fetch(`${API_BASE}/caddyfile`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ content })
+                });
+                
+                const saveData = await saveResponse.json();
+                
+                if (saveResponse.ok) {
+                    showNotification('Caddyfile saved successfully!', 'success');
+                    
+                    // Restart Caddy
+                    const restartResponse = await fetch(`${API_BASE}/restart`, {
+                        method: 'POST'
+                    });
+                    
+                    const restartData = await restartResponse.json();
+                    
+                    if (restartResponse.ok) {
+                        showNotification('Caddy restarted successfully!', 'success');
+                    } else {
+                        showNotification('Error restarting Caddy: ' + restartData.error, 'error');
+                    }
+                } else {
+                    showNotification('Error saving Caddyfile: ' + saveData.error, 'error');
+                }
+            } catch (error) {
+                showNotification('Failed to save/restart: ' + error.message, 'error');
+            }
+        }
+        
+        // Create backup
+        async function createBackup() {
+            try {
+                const response = await fetch(`${API_BASE}/backup`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showNotification('Backup created successfully!', 'success');
+                    loadBackups();
+                } else {
+                    showNotification('Error creating backup: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showNotification('Failed to create backup: ' + error.message, 'error');
+            }
+        }
+        
+        // Load backups
+        async function loadBackups() {
+            try {
+                const response = await fetch(`${API_BASE}/backups`);
+                backups = await response.json();
+                
+                if (response.ok) {
+                    displayBackups();
+                } else {
+                    document.getElementById('backupsList').innerHTML = 
+                        '<div class="text-muted">Error loading backups</div>';
+                }
+            } catch (error) {
+                document.getElementById('backupsList').innerHTML = 
+                    '<div class="text-muted">Failed to load backups</div>';
+            }
+        }
+        
+        // Display backups
+        function displayBackups() {
+            const container = document.getElementById('backupsList');
+            
+            if (backups.length === 0) {
+                container.innerHTML = '<div class="text-muted">No backups found</div>';
+                return;
+            }
+            
+            const html = backups.map(backup => `
+                <div class="backup-item p-2 border-bottom" onclick="loadBackup('${backup.id}')">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <div class="fw-bold">${backup.id}</div>
+                            <div class="text-muted small">${new Date(backup.time).toLocaleString()}</div>
+                        </div>
+                        <div class="text-muted small">${formatBytes(backup.size)}</div>
+                    </div>
+                </div>
+            `).join('');
+            
+            container.innerHTML = html;
+        }
+        
+        // Load backup
+        async function loadBackup(backupId) {
+            try {
+                const response = await fetch(`${API_BASE}/backup/${backupId}`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    domains = parseCaddyfile(data.content);
+                    displayDomains();
+                    showNotification('Backup loaded successfully!', 'success');
+                } else {
+                    showNotification('Error loading backup: ' + data.error, 'error');
+                }
+            } catch (error) {
+                showNotification('Failed to load backup: ' + error.message, 'error');
+            }
+        }
+        
+        // Toggle backup panel
+        function toggleBackupPanel(event) {
+            event.preventDefault();
+            const backupsColumn = document.getElementById('backupsColumn');
+            const domainsColumn = document.getElementById('domainsColumn');
+            const toggleIcon = document.getElementById('backupToggleIcon');
+            const toggleButton = event.target.closest('button');
+            
+            if (backupsColumn.style.display === 'none') {
+                // Show backups panel
+                backupsColumn.style.display = 'block';
+                domainsColumn.className = 'col-lg-8';
+                toggleIcon.className = 'ti ti-chevron-up';
+                if (toggleButton) {
+                    toggleButton.innerHTML = '<i class="ti ti-database me-1"></i>Hide Backups';
+                }
+            } else {
+                // Hide backups panel
+                backupsColumn.style.display = 'none';
+                domainsColumn.className = 'col-12';
+                toggleIcon.className = 'ti ti-chevron-down';
+                if (toggleButton) {
+                    toggleButton.innerHTML = '<i class="ti ti-database me-1"></i>Show Backups';
+                }
+            }
+        }
+        
+        // Utility functions
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `toast show bg-${type === 'success' ? 'success' : 'danger'} text-white`;
+            notification.style.position = 'fixed';
+            notification.style.top = '20px';
+            notification.style.right = '20px';
+            notification.style.zIndex = '9999';
+            notification.innerHTML = `
+                <div class="toast-body">
+                    ${message}
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 3000);
+        }
+        
+        // Event listeners
+        document.getElementById('addDomainBtn').addEventListener('click', () => {
+            const modal = new bootstrap.Modal(document.getElementById('addDomainModal'));
+            modal.show();
+        });
+        
+        document.getElementById('saveDomainBtn').addEventListener('click', addDomain);
+        document.getElementById('previewBtn').addEventListener('click', previewCaddyfile);
+        document.getElementById('checkPortsBtn').addEventListener('click', checkAllPorts);
+        document.getElementById('saveBtn').addEventListener('click', saveAndRestart);
+        document.getElementById('backupBtn').addEventListener('click', createBackup);
+        
+        // Sorting functionality
+        let currentSortColumn = -1;
+        let currentSortDirection = 'asc';
+        
+        function sortTable(columnIndex) {
+            const tbody = document.getElementById('domainsTable');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            
+            // Clear previous sort indicators
+            document.querySelectorAll('.sort-icon').forEach(icon => {
+                icon.className = 'ti ti-arrows-sort sort-icon';
+            });
+            
+            // Determine sort direction
+            if (currentSortColumn === columnIndex) {
+                currentSortDirection = currentSortDirection === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSortColumn = columnIndex;
+                currentSortDirection = 'asc';
+            }
+            
+            // Update sort indicator
+            const sortIcon = document.getElementById(`sort-icon-${columnIndex}`);
+            if (sortIcon) {
+                sortIcon.className = `ti ti-arrows-sort sort-icon active ${currentSortDirection === 'asc' ? 'sort-asc' : ''}`;
+            }
+            
+            // Sort the rows
+            rows.sort((a, b) => {
+                let aValue, bValue;
+                
+                if (columnIndex === 0) {
+                    // Sort by domain
+                    aValue = a.querySelector('td:first-child input').value.toLowerCase();
+                    bValue = b.querySelector('td:first-child input').value.toLowerCase();
+                } else if (columnIndex === 2) {
+                    // Sort by port (extract port from target)
+                    const aTarget = a.querySelector('td:nth-child(3) input').value;
+                    const bTarget = b.querySelector('td:nth-child(3) input').value;
+                    aValue = extractPort(aTarget);
+                    bValue = extractPort(bTarget);
+                } else {
+                    return 0;
+                }
+                
+                if (currentSortDirection === 'asc') {
+                    return aValue.localeCompare(bValue);
+                } else {
+                    return bValue.localeCompare(aValue);
+                }
+            });
+            
+            // Reorder the rows in the table
+            rows.forEach(row => tbody.appendChild(row));
+        }
+        
+        function extractPort(target) {
+            if (!target) return '';
+            const match = target.match(/:(\d+)/);
+            return match ? match[1] : target;
+        }
+        
+        // Add click handlers for port status elements
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('.port-status')) {
+                const portStatus = e.target.closest('.port-status');
+                const port = portStatus.getAttribute('data-port');
+                if (port) {
+                    checkIndividualPort(port);
+                }
+            }
+        });
+        
+        // Initialize
+        loadDomains();
+        loadBackups();
+    </script>
+</body>
+</html> 
