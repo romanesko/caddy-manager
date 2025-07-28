@@ -55,7 +55,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: release-files
+          name: release-files-${{ matrix.os }}-${{ matrix.arch }}
           path: |
             caddy-manager-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
             caddy-manager-${{ matrix.os }}-${{ matrix.arch }}.zip
