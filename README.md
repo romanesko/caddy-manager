@@ -6,7 +6,7 @@ Web application for managing Caddyfile with a beautiful Tabler UI interface.
 
 ### Latest Release: [v1.0.7](https://github.com/romanesko/caddy-manager/releases/tag/v1.0.7)
 
-**Pre-built binaries:**
+**Pre-built binaries (single file, no external static needed):**
 - **Linux AMD64**: [caddy-manager-linux-amd64.tar.gz](https://github.com/romanesko/caddy-manager/releases/download/v1.0.7/caddy-manager-linux-amd64.tar.gz)
 - **Linux ARM64**: [caddy-manager-linux-arm64.tar.gz](https://github.com/romanesko/caddy-manager/releases/download/v1.0.7/caddy-manager-linux-arm64.tar.gz)
 - **macOS AMD64**: [caddy-manager-darwin-amd64.tar.gz](https://github.com/romanesko/caddy-manager/releases/download/v1.0.7/caddy-manager-darwin-amd64.tar.gz)
@@ -16,7 +16,7 @@ Web application for managing Caddyfile with a beautiful Tabler UI interface.
 
 ## 🚀 Technologies
 
-- **Frontend**: Vanilla JavaScript + Tabler UI
+- **Frontend**: Vanilla JavaScript + Tabler UI (embedded in Go binary)
 - **Backend**: Go + Gin Framework
 - **Interface**: Modern web interface with table representation
 
@@ -89,12 +89,10 @@ cd caddy-manager-darwin-arm64
    ```
 4. **Run**:
    ```bash
-   # Start in background
-   make start
-   
-   # Or run directly
    ./caddy-manager
    ```
+
+**No need to copy or extract the static folder!**
 
 ### From Source
 
@@ -141,44 +139,12 @@ mkdir -p backups
 ```bash
 sudo make setup-sudo
 ```
-Details in [SUDO_SETUP.md](SUDO_SETUP.md)
 
-7. Start the application:
+7. Build and run:
 ```bash
-# Development mode
-make dev
-
-# Or in background mode
-make start
+go build -o caddy-manager .
+./caddy-manager
 ```
-
-The application will be available at `http://localhost:8000`
-
-**Important**: You will need to enter the login and password specified in the environment variables to access the application.
-
-### Makefile Commands (Development)
-
-- `make setup-sudo` - Setup sudo permissions (requires sudo)
-- `make build` - Build application
-- `make dev` - Run in development mode
-- `make start` - Start in background mode
-- `make stop` - Stop application
-- `make restart` - Restart application
-- `make status` - Show application status
-
-### Release Makefile Commands
-
-The release package includes `Makefile` with simplified commands:
-
-- `make setup-sudo` - Setup sudo permissions (requires sudo)
-- `make start` - Start application in background
-- `make stop` - Stop application
-- `make restart` - Restart application
-- `make status` - Show application status
-- `make logs` - Show logs in real-time
-- `make clean` - Clean logs and PID files
-- `make logs` - Show logs in real-time
-- `make clean` - Clean built files
 
 ## Usage
 
@@ -256,7 +222,7 @@ caddy-manager/
 ├── env.example          # Configuration example
 ├── Makefile             # Management commands
 ├── SUDO_SETUP.md        # Sudo setup documentation
-├── static/              # Static files
+├── static/              # Static files (embedded in binary)
 │   └── index.html       # Web interface (Vanilla JS + Tabler UI)
 ├── backups/             # Backup directory
 └── README.md            # Documentation

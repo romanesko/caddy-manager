@@ -1,12 +1,18 @@
 package main
 
 import (
+	"embed"
+	"io/fs"
 	"log"
+	"net/http"
 	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
 )
+
+//go:embed static/*
+var staticFS embed.FS
 
 func main() {
 	// Load environment variables
@@ -43,9 +49,20 @@ func main() {
 	// Apply Basic Authentication to all routes
 	r.Use(BasicAuthMiddleware())
 
-	// Static files for frontend
-	r.Static("/static", "./static")
-	r.StaticFile("/", "./static/index.html")
+	// Static files for frontend (embed)
+	staticServer, _ := fs.Sub(staticFS, "static")
+	r.StaticFS("/static", http.FS(staticServer))
+
+	// Отдача index.html из embed
+	r.GET("/", func(c *gin.Context) {
+		file, err := staticFS.Open("static/index.html")
+		if err != nil {
+			c.String(404, "index.html not found")
+			return
+		}
+		stat, _ := file.Stat()
+		c.DataFromReader(200, stat.Size(), "text/html", file, nil)
+	})
 
 	// API routes
 	api := r.Group("/api")
