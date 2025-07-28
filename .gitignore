@@ -1,10 +1,12 @@
 # Binaries for programs and plugins
-*.exe
-*.exe~
-*.dll
 *.so
 *.dylib
 caddy-manager
+caddy-manager-*
+
+# Release packages
+*.tar.gz
+*.zip
 
 # Test binary, built with `go test -c`
 *.test

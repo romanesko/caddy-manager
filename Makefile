@@ -21,20 +21,26 @@ help:
 	@echo "$(GREEN)Caddy Manager - Management Commands$(NC)"
 	@echo ""
 	@echo "$(YELLOW)Available commands:$(NC)"
-	@echo "  make setup-sudo - Setup sudo permissions (requires sudo)"
-	@echo "  make build      - Build application"
-	@echo "  make dev        - Run in development mode"
-	@echo "  make start      - Start in background mode"
-	@echo "  make stop       - Stop application"
-	@echo "  make restart    - Restart application"
-	@echo "  make status     - Show application status"
-	@echo "  make logs       - Show logs in real-time"
-	@echo "  make clean      - Clean built files"
-	@echo "  make check-port - Check if port is in use"
-	@echo "  make deps       - Install dependencies"
-	@echo "  make test       - Run tests"
-	@echo "  make fmt        - Format code"
-	@echo "  make lint       - Run linter"
+	@echo "  make setup-sudo     - Setup sudo permissions (requires sudo)"
+	@echo "  make build          - Build application"
+	@echo "  make build-all      - Build for all platforms"
+	@echo "  make build-linux-amd64   - Build for Linux AMD64"
+	@echo "  make build-darwin-amd64  - Build for macOS AMD64"
+	@echo "  make build-darwin-arm64  - Build for macOS ARM64"
+
+	@echo "  make release-packages    - Create release packages"
+	@echo "  make dev           - Run in development mode"
+	@echo "  make start         - Start in background mode"
+	@echo "  make stop          - Stop application"
+	@echo "  make restart       - Restart application"
+	@echo "  make status        - Show application status"
+	@echo "  make logs          - Show logs in real-time"
+	@echo "  make clean         - Clean built files"
+	@echo "  make check-port    - Check if port is in use"
+	@echo "  make deps          - Install dependencies"
+	@echo "  make test          - Run tests"
+	@echo "  make fmt           - Format code"
+	@echo "  make lint          - Run linter"
 	@echo ""
 
 
@@ -96,6 +102,45 @@ build:
 	@echo "$(GREEN)Building Caddy Manager...$(NC)"
 	@go build -o $(APP_NAME) .
 	@echo "$(GREEN)✓ Application built: $(APP_NAME)$(NC)"
+
+# Build for Linux AMD64
+build-linux-amd64:
+	@echo "$(GREEN)Building for Linux AMD64...$(NC)"
+	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o caddy-manager-linux-amd64 .
+	@echo "$(GREEN)✓ Built: caddy-manager-linux-amd64$(NC)"
+
+# Build for macOS AMD64
+build-darwin-amd64:
+	@echo "$(GREEN)Building for macOS AMD64...$(NC)"
+	@GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o caddy-manager-darwin-amd64 .
+	@echo "$(GREEN)✓ Built: caddy-manager-darwin-amd64$(NC)"
+
+# Build for macOS ARM64
+build-darwin-arm64:
+	@echo "$(GREEN)Building for macOS ARM64...$(NC)"
+	@GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-s -w" -o caddy-manager-darwin-arm64 .
+	@echo "$(GREEN)✓ Built: caddy-manager-darwin-arm64$(NC)"
+
+
+
+# Build for all platforms
+build-all:
+	@echo "$(GREEN)Building for all platforms...$(NC)"
+	$(MAKE) build-linux-amd64
+	$(MAKE) build-darwin-amd64
+	$(MAKE) build-darwin-arm64
+
+	@echo "$(GREEN)✓ All builds completed$(NC)"
+
+# Create release packages
+release-packages:
+	@echo "$(GREEN)Creating release packages...$(NC)"
+	$(MAKE) build-all
+	@tar -czf caddy-manager-linux-amd64.tar.gz caddy-manager-linux-amd64 README.md env.example SUDO_SETUP.md
+	@tar -czf caddy-manager-darwin-amd64.tar.gz caddy-manager-darwin-amd64 README.md env.example SUDO_SETUP.md
+	@tar -czf caddy-manager-darwin-arm64.tar.gz caddy-manager-darwin-arm64 README.md env.example SUDO_SETUP.md
+
+	@echo "$(GREEN)✓ Release packages created$(NC)"
 
 # Run in development mode
 dev:

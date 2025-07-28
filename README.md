@@ -1,53 +1,79 @@
 # Caddy Manager
 
-Веб-приложение для управления Caddyfile с красивым интерфейсом на Tabler UI.
+Web application for managing Caddyfile with a beautiful Tabler UI interface.
 
-## 🚀 Технологии
+## 🚀 Technologies
 
 - **Frontend**: Vanilla JavaScript + Tabler UI
 - **Backend**: Go + Gin Framework
-- **Интерфейс**: Современный веб-интерфейс с табличным представлением
+- **Interface**: Modern web interface with table representation
 
-## 🎯 Возможности
+## 🎯 Features
 
-- 📝 Редактирование Caddyfile через удобную таблицу
-- 💾 Автоматическое создание бэкапов перед изменениями
-- 🔄 Перезапуск Caddy сервера
-- 📋 Просмотр и восстановление бэкапов
-- 🔍 Проверка статуса портов в реальном времени
-- 🔐 Базовая аутентификация
-- 📱 Адаптивный дизайн с Tabler UI
-- ✅ Валидация синтаксиса перед применением
-- 📚 Соответствие официальным стандартам Caddyfile
+- 📝 Edit Caddyfile through a convenient table
+- 💾 Automatic backup creation before changes
+- 🔄 Restart Caddy server
+- 📋 View and restore backups
+- 🔍 Real-time port status checking
+- 🔐 Basic authentication
+- 📱 Responsive design with Tabler UI
+- ✅ Syntax validation before applying
+- 📚 Compliance with official Caddyfile standards
 
-## Установка
+## Installation
 
-### Требования
+### Quick Start (Pre-built Binaries)
 
-- Go 1.21 или выше
-- Caddy сервер
-- Права на запись в `/etc/caddy/Caddyfile`
+Download the latest release for your platform from [GitHub Releases](https://github.com/your-username/caddy-manager/releases):
 
-### Шаги установки
+1. **Download** the appropriate package for your platform
+2. **Extract** the archive
+3. **Make executable** (Linux/macOS):
+   ```bash
+   chmod +x caddy-manager
+   ```
+4. **Configure** environment:
+   ```bash
+   cp env.example .env
+   # Edit .env with your settings
+   ```
+5. **Setup sudo** (if needed):
+   ```bash
+   sudo ./caddy-manager setup-sudo
+   ```
+6. **Run**:
+   ```bash
+   ./caddy-manager
+   ```
 
-1. Клонируйте репозиторий:
+### From Source
+
+#### Requirements
+
+- Go 1.21 or higher
+- Caddy server
+- Write permissions to `/etc/caddy/Caddyfile`
+
+#### Installation Steps
+
+1. Clone the repository:
 ```bash
 git clone <repository-url>
 cd caddy-manager
 ```
 
-2. Установите зависимости:
+2. Install dependencies:
 ```bash
 go mod tidy
 ```
 
-3. Создайте и настройте файл `.env`:
+3. Create and configure `.env` file:
 ```bash
-make setup
-# Отредактируйте .env файл под ваши нужды
+cp env.example .env
+# Edit .env file according to your needs
 ```
 
-4. Настройте переменные окружения в `.env`:
+4. Configure environment variables in `.env`:
 ```env
 CADDYFILE_PATH=/etc/caddy/Caddyfile
 BACKUP_DIR=./backups
@@ -56,7 +82,7 @@ AUTH_USERNAME=admin
 AUTH_PASSWORD=admin123
 ```
 
-5. Создайте директорию для бэкапов:
+5. Create backup directory:
 ```bash
 mkdir -p backups
 ```
@@ -67,22 +93,21 @@ sudo make setup-sudo
 ```
 Details in [SUDO_SETUP.md](SUDO_SETUP.md)
 
-7. Запустите приложение:
+7. Start the application:
 ```bash
-# Режим разработки
+# Development mode
 make dev
 
-# Или в фоновом режиме
+# Or in background mode
 make start
 ```
 
-Приложение будет доступно по адресу `http://localhost:8000`
+The application will be available at `http://localhost:8000`
 
-**Важно**: Для доступа к приложению потребуется ввести логин и пароль, указанные в переменных окружения.
+**Important**: You will need to enter the login and password specified in the environment variables to access the application.
 
 ### Makefile Commands
 
-- `make setup` - Create `.env` file from example
 - `make setup-sudo` - Setup sudo permissions (requires sudo)
 - `make build` - Build application
 - `make dev` - Run in development mode
@@ -91,104 +116,102 @@ make start
 - `make restart` - Restart application
 - `make status` - Show application status
 - `make logs` - Show logs in real-time
-- `make logs-show` - Show all logs
 - `make clean` - Clean built files
 
-## Использование
+## Usage
 
-### Основные функции
+### Main Features
 
-1. **Редактирование**: Откройте веб-интерфейс и отредактируйте Caddyfile в редакторе с подсветкой синтаксиса
-2. **Сохранение**: Нажмите кнопку "Save" для сохранения изменений (автоматически создается бэкап)
-3. **Перезапуск**: Нажмите "Restart Caddy" для применения изменений
-4. **Бэкапы**: Используйте вкладку "Backups" для просмотра и восстановления предыдущих версий
+1. **Editing**: Open the web interface and edit Caddyfile in the table editor
+2. **Saving**: Click "Save" button to save changes (backup is automatically created)
+3. **Restart**: Click "Restart Caddy" to apply changes
+4. **Backups**: Use the "Backups" tab to view and restore previous versions
 
 ### API Endpoints
 
-- `GET /api/caddyfile` - Получить содержимое Caddyfile
-- `POST /api/caddyfile` - Сохранить Caddyfile
-- `POST /api/restart` - Перезапустить Caddy
-- `GET /api/backups` - Получить список бэкапов
-- `POST /api/backup` - Создать новый бэкап
-- `GET /api/backup/:id` - Получить содержимое бэкапа
-- `POST /api/restore/:id` - Восстановить бэкап
-- `GET /api/check-ports` - Проверить статус всех портов
+- `GET /api/caddyfile` - Get Caddyfile content
+- `POST /api/caddyfile` - Save Caddyfile
+- `POST /api/restart` - Restart Caddy
+- `GET /api/backups` - Get list of backups
+- `POST /api/backup` - Create new backup
+- `GET /api/backup/:id` - Get backup content
+- `POST /api/restore/:id` - Restore backup
+- `GET /api/check-ports` - Check status of all ports
 
-## 📚 Поддержка стандартов Caddyfile
+## 📚 Caddyfile Standards Support
 
-Приложение полностью соответствует [официальной документации Caddyfile](https://caddyserver.com/docs/caddyfile/concepts) и поддерживает:
+The application fully complies with the [official Caddyfile documentation](https://caddyserver.com/docs/caddyfile/concepts) and supports:
 
-### ✅ Поддерживаемые концепции:
+### ✅ Supported Concepts:
 
-- **Глобальные опции** - блок `{ }` в начале файла
-- **Сниппеты** - именованные блоки `(name) { }`
-- **Блоки сайтов** - основной контент с адресами и директивами
-- **Комментарии** - начинаются с `#`
-- **Директивы** - `reverse_proxy`, `file_server`, `request_body`, `transport`
-- **Поддирективы** - `max_size`, `read_timeout`, `root *`
-- **Импорты** - `import` директивы для сниппетов
+- **Global Options** - `{ }` block at the beginning of the file
+- **Snippets** - named blocks `(name) { }`
+- **Site Blocks** - main content with addresses and directives
+- **Comments** - start with `#`
+- **Directives** - `reverse_proxy`, `file_server`, `request_body`, `transport`
+- **Subdirectives** - `max_size`, `read_timeout`, `root *`
+- **Imports** - `import` directives for snippets
 
-### 🔧 Парсер Caddyfile:
+### 🔧 Caddyfile Parser:
 
-- Правильно обрабатывает вложенные блоки
-- Игнорирует глобальные опции и сниппеты при извлечении доменов
-- Корректно извлекает порты из `reverse_proxy` директив
-- Поддерживает сложные конфигурации с `request_body` и `transport`
+- Correctly processes nested blocks
+- Ignores global options and snippets when extracting domains
+- Correctly extracts ports from `reverse_proxy` directives
+- Supports complex configurations with `request_body` and `transport`
 
-### 📖 Примеры:
+### 📖 Examples:
 
-В директории `examples/` вы найдете примеры различных конфигураций:
+In the `examples/` directory you will find examples of various configurations:
 
-- `complex-caddyfile` - Демонстрирует все поддерживаемые возможности:
-  - Глобальные опции
-  - Сниппеты для логирования и безопасности
-  - Различные типы сайтов (file_server, reverse_proxy)
-  - Сложные конфигурации с таймаутами
-  - Множественные адреса и поддомены
+- `complex-caddyfile` - Demonstrates all supported capabilities:
+  - Global options
+  - Snippets for logging and security
+  - Various site types (file_server, reverse_proxy)
+  - Complex configurations with timeouts
+  - Multiple addresses and subdomains
 
-## Безопасность
+## Security
 
-⚠️ **Важно**: Приложение требует прав на запись в системные файлы. Рекомендуется:
+⚠️ **Important**: The application requires write permissions to system files. It is recommended to:
 
-- Запускать с минимальными необходимыми правами
-- **Обязательно настроить AUTH_USERNAME и AUTH_PASSWORD в .env**
-- Использовать сложные пароли для продакшена
-- Регулярно проверять бэкапы
-- Использовать HTTPS в продакшене
-- Ограничить доступ к порту только с доверенных IP-адресов
+- Run with minimal necessary privileges
+- **Always configure AUTH_USERNAME and AUTH_PASSWORD in .env**
+- Use strong passwords for production
+- Regularly check backups
+- Use HTTPS in production
+- Restrict port access to trusted IP addresses only
 
-## Разработка
+## Development
 
-### Структура проекта
+### Project Structure
 
 ```
 caddy-manager/
-├── main.go              # Основной файл приложения
-├── handlers.go          # API обработчики
-├── auth.go              # Аутентификация и безопасность
-├── go.mod               # Go модули
-├── env.example          # Пример конфигурации
+├── main.go              # Main application file
+├── handlers.go          # API handlers
+├── auth.go              # Authentication and security
+├── go.mod               # Go modules
+├── env.example          # Configuration example
 ├── Makefile             # Management commands
-├── SUDO_SETUP.md        # Документация по настройке sudo
-├── static/              # Статические файлы
-│   └── index.html       # Веб-интерфейс (Vanilla JS + Tabler UI)
-├── backups/             # Директория для бэкапов
-├── examples/            # Примеры Caddyfile
-└── README.md            # Документация
+├── SUDO_SETUP.md        # Sudo setup documentation
+├── static/              # Static files
+│   └── index.html       # Web interface (Vanilla JS + Tabler UI)
+├── backups/             # Backup directory
+└── README.md            # Documentation
 ```
 
-### Сборка
+### Building
 
 ```bash
 go build -o caddy-manager .
 ```
 
-### Запуск в продакшене
+### Running in Production
 
 ```bash
 ./caddy-manager
 ```
 
-## Лицензия
+## License
 
 MIT License 
