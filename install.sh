@@ -170,7 +170,7 @@ main() {
     if [[ -d "$INSTALL_DIR" ]]; then
         print_warning "Directory '$INSTALL_DIR' already exists."
         echo -n "Do you want to update to the latest version? (y/N): "
-        read -r response
+        read -r response < /dev/tty
         
         if [[ "$response" =~ ^[Yy]$ ]]; then
             print_status "Updating existing installation..."
