@@ -55,7 +55,7 @@ jobs:
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: caddy-manager-${{ matrix.os }}-${{ matrix.arch }}
+          name: release-files
           path: |
             caddy-manager-${{ matrix.os }}-${{ matrix.arch }}.tar.gz
             caddy-manager-${{ matrix.os }}-${{ matrix.arch }}.zip
@@ -75,68 +75,15 @@ jobs:
 
       - name: Create Release
         id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
-          body: |
-            ## Caddy Manager v1.0.0
-            
-            Web application for managing Caddyfile with a beautiful Tabler UI interface.
-            
-            ### Supported Platforms
-            - Linux AMD64
-            - Linux ARM64  
-            - macOS AMD64
-            - macOS ARM64
-            
-            ### Installation
-            1. Download the appropriate package for your platform
-            2. Extract the archive
-            3. Make executable: `chmod +x caddy-manager`
-            4. Configure environment: `cp env.example .env`
-            5. Run: `./caddy-manager`
+          files: |
+            *.tar.gz
+            *.zip
           draft: false
           prerelease: false
-
-      - name: Upload Release Assets
-        uses: actions/upload-release-asset@v1
+          generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./caddy-manager-linux-amd64.tar.gz
-          asset_name: caddy-manager-linux-amd64.tar.gz
-          asset_content_type: application/gzip
 
-      - name: Upload Release Assets
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./caddy-manager-linux-arm64.tar.gz
-          asset_name: caddy-manager-linux-arm64.tar.gz
-          asset_content_type: application/gzip
-
-      - name: Upload Release Assets
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./caddy-manager-darwin-amd64.tar.gz
-          asset_name: caddy-manager-darwin-amd64.tar.gz
-          asset_content_type: application/gzip
-
-      - name: Upload Release Assets
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./caddy-manager-darwin-arm64.tar.gz
-          asset_name: caddy-manager-darwin-arm64.tar.gz
-          asset_content_type: application/gzip 
+ 
