@@ -99,6 +99,10 @@ download_and_extract() {
     # Extract to current directory
     tar -xzf "$filename"
     
+    # Debug: list extracted files
+    print_status "Extracted files:"
+    ls -la
+    
     # Move files to target directory
     if [[ "$mode" == "update" ]]; then
         # Update existing installation
@@ -111,10 +115,19 @@ download_and_extract() {
         fi
         
         # Copy new files, preserving .env
-        if [[ -d "caddy-manager-${os}-${arch}" ]]; then
-            cp -r caddy-manager-${os}-${arch}/* "$INSTALL_DIR/"
+        extracted_dir=""
+        for dir in caddy-manager-*; do
+            if [[ -d "$dir" ]]; then
+                extracted_dir="$dir"
+                break
+            fi
+        done
+        
+        if [[ -n "$extracted_dir" ]]; then
+            print_status "Found extracted directory: $extracted_dir"
+            cp -r "$extracted_dir"/* "$INSTALL_DIR/"
         else
-            print_error "Extracted directory not found: caddy-manager-${os}-${arch}"
+            print_error "No extracted directory found"
             exit 1
         fi
         
@@ -127,10 +140,19 @@ download_and_extract() {
     else
         # New installation
         print_step "Creating new installation..."
-        if [[ -d "caddy-manager-${os}-${arch}" ]]; then
-            mv caddy-manager-${os}-${arch} "$INSTALL_DIR"
+        extracted_dir=""
+        for dir in caddy-manager-*; do
+            if [[ -d "$dir" ]]; then
+                extracted_dir="$dir"
+                break
+            fi
+        done
+        
+        if [[ -n "$extracted_dir" ]]; then
+            print_status "Found extracted directory: $extracted_dir"
+            mv "$extracted_dir" "$INSTALL_DIR"
         else
-            print_error "Extracted directory not found: caddy-manager-${os}-${arch}"
+            print_error "No extracted directory found"
             exit 1
         fi
         
