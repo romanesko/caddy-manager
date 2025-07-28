@@ -6,6 +6,9 @@ on:
       - 'v*'
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -41,9 +44,12 @@ jobs:
           GOARCH: ${{ matrix.arch }}
           CGO_ENABLED: 0
         run: |
+          echo "Building for ${{ matrix.os }}-${{ matrix.arch }}"
           go build -ldflags="-s -w" -o caddy-manager${{ matrix.ext }} .
+          echo "Creating archive for ${{ matrix.os }}-${{ matrix.arch }}"
           tar -czf caddy-manager-${{ matrix.os }}-${{ matrix.arch }}.tar.gz caddy-manager${{ matrix.ext }} README.md env.example SUDO_SETUP.md
           zip caddy-manager-${{ matrix.os }}-${{ matrix.arch }}.zip caddy-manager${{ matrix.ext }} README.md env.example SUDO_SETUP.md
+          ls -la *.tar.gz *.zip
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
