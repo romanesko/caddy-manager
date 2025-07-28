@@ -207,25 +207,26 @@ main() {
         response=""
         if [[ -t 0 ]]; then
             # Interactive terminal
-            echo -n "Do you want to update to the latest version? (y/N): "
+            echo -n "Do you want to update to the latest version? (Y/n): "
             read -r response
         elif [[ -e /dev/tty ]]; then
             # Try /dev/tty
-            echo -n "Do you want to update to the latest version? (y/N): " > /dev/tty
+            echo -n "Do you want to update to the latest version? (Y/n): " > /dev/tty
             read -r response < /dev/tty
         else
-            # Non-interactive, assume no
-            print_warning "Non-interactive mode detected. Assuming 'no' for update."
-            response="n"
+            # Non-interactive, assume yes
+            print_warning "Non-interactive mode detected. Assuming 'yes' for update."
+            response="y"
         fi
         
-        if [[ "$response" =~ ^[Yy]$ ]]; then
-            print_status "Updating existing installation..."
-            download_and_extract "$LATEST_VERSION" "$OS" "$ARCH" "update"
-            print_status "Update completed!"
-        else
+        if [[ "$response" =~ ^[Nn]$ ]]; then
             print_status "Installation cancelled."
             exit 0
+        else
+            print_status "Updating existing installation..."
+            print_status "Note: Your existing .env file will be preserved."
+            download_and_extract "$LATEST_VERSION" "$OS" "$ARCH" "update"
+            print_status "Update completed!"
         fi
     else
         print_status "Installing Caddy Manager..."
