@@ -232,8 +232,8 @@ main() {
     # Detect system
     detect_system
     
-    # Check if installation directory exists
-    if [[ -d "$INSTALL_DIR" ]]; then
+    # Check if installation directory exists (but not if we're already in it)
+    if [[ -d "$INSTALL_DIR" ]] && [[ "$(basename "$(pwd)")" != "$INSTALL_DIR" ]]; then
         print_warning "Directory '$INSTALL_DIR' already exists."
         
         # Try different methods to get user input
