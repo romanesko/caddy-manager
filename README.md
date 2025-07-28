@@ -38,22 +38,56 @@ Web application for managing Caddyfile with a beautiful Tabler UI interface.
 
 Download the latest release for your platform from [GitHub Releases](https://github.com/romanesko/caddy-manager/releases):
 
-1. **Download** the appropriate package for your platform
-2. **Extract** the archive
-3. **Make executable** (Linux/macOS):
+#### Download and Extract
+
+**Option 1: Download via browser**
+1. Go to [GitHub Releases](https://github.com/romanesko/caddy-manager/releases)
+2. Download the appropriate `.tar.gz` file for your platform
+3. Extract the archive:
+   ```bash
+   tar -xzf caddy-manager-linux-amd64.tar.gz
+   cd caddy-manager-linux-amd64
+   ```
+
+**Option 2: Download via wget/curl**
+```bash
+# Linux AMD64
+wget https://github.com/romanesko/caddy-manager/releases/download/v1.0.3/caddy-manager-linux-amd64.tar.gz
+tar -xzf caddy-manager-linux-amd64.tar.gz
+cd caddy-manager-linux-amd64
+
+# Linux ARM64
+wget https://github.com/romanesko/caddy-manager/releases/download/v1.0.3/caddy-manager-linux-arm64.tar.gz
+tar -xzf caddy-manager-linux-arm64.tar.gz
+cd caddy-manager-linux-arm64
+
+# macOS AMD64
+wget https://github.com/romanesko/caddy-manager/releases/download/v1.0.3/caddy-manager-darwin-amd64.tar.gz
+tar -xzf caddy-manager-darwin-amd64.tar.gz
+cd caddy-manager-darwin-amd64
+
+# macOS ARM64
+wget https://github.com/romanesko/caddy-manager/releases/download/v1.0.3/caddy-manager-darwin-arm64.tar.gz
+tar -xzf caddy-manager-darwin-arm64.tar.gz
+cd caddy-manager-darwin-arm64
+```
+
+#### Installation Steps
+
+1. **Make executable** (Linux/macOS):
    ```bash
    chmod +x caddy-manager
    ```
-4. **Configure** environment:
+2. **Configure** environment:
    ```bash
    cp env.example .env
    # Edit .env with your settings
    ```
-5. **Setup sudo** (if needed):
+3. **Setup sudo** (if needed):
    ```bash
    sudo make setup-sudo
    ```
-6. **Run**:
+4. **Run**:
    ```bash
    # Start in background
    make start
