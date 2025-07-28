@@ -510,7 +510,7 @@
             }
             
             const html = domains.map((domain, index) => `
-                <tr class="domain-row" data-index="${index}">
+                <tr class="domain-row" data-index="${index}" id="domain-row-${index}">
                     <td>
                         <input type="text" class="form-control form-control-sm" value="${domain.domain}" 
                                onchange="updateDomain(${index}, 'domain', this.value)">
@@ -580,6 +580,15 @@
         function updateDomainPort(index, port) {
             if (domains[index]) {
                 domains[index].setPort(port);
+                
+                // Update the port status element to reflect the new port
+                const row = document.getElementById(`domain-row-${index}`);
+                if (row) {
+                    const statusElement = row.querySelector('.port-status');
+                    if (statusElement) {
+                        statusElement.setAttribute('data-port', port);
+                    }
+                }
             }
         }
         
@@ -589,11 +598,10 @@
                 // Remove from domains array
                 domains.splice(index, 1);
                 
-                // Remove the specific row from DOM without reloading the page
-                const tbody = document.getElementById('domainsTable');
-                const rows = tbody.querySelectorAll('tr');
-                if (rows[index]) {
-                    rows[index].remove();
+                // Remove the specific row from DOM by ID
+                const rowElement = document.getElementById(`domain-row-${index}`);
+                if (rowElement) {
+                    rowElement.remove();
                 }
                 
                 showNotification('Domain removed successfully!', 'success');
@@ -824,7 +832,7 @@
             }
             
             const html = backups.map(backup => `
-                <div class="backup-item p-2 border-bottom" onclick="loadBackup('${backup.id}')">
+                <div class="backup-item p-2 border-bottom cursor-pointer" onclick="loadBackup('${backup.id}')">
                     <div class="d-flex justify-content-between align-items-center">
                         <div>
                             <div class="fw-bold">${backup.id}</div>
