@@ -1,5 +1,5 @@
-# Caddy Manager Makefile
-# Caddy Manager application management
+# Caddy Manager - Release Makefile
+# Simplified Makefile for release packages
 
 # Variables
 APP_NAME = caddy-manager
@@ -14,37 +14,23 @@ RED = \033[0;31m
 NC = \033[0m # No Color
 
 # Commands
-.PHONY: help build dev start stop clean logs status setup-sudo
+.PHONY: help setup-sudo start stop restart status logs clean
 
 # Show help
 help:
-	@echo "$(GREEN)Caddy Manager - Management Commands$(NC)"
+	@echo "$(GREEN)Caddy Manager - Release Commands$(NC)"
 	@echo ""
 	@echo "$(YELLOW)Available commands:$(NC)"
 	@echo "  make setup-sudo     - Setup sudo permissions (requires sudo)"
-	@echo "  make build          - Build application"
-	@echo "  make build-all      - Build for all platforms"
-	@echo "  make build-linux-amd64   - Build for Linux AMD64"
-	@echo "  make build-darwin-amd64  - Build for macOS AMD64"
-	@echo "  make build-darwin-arm64  - Build for macOS ARM64"
-
-	@echo "  make release-packages    - Create release packages"
-	@echo "  make dev           - Run in development mode"
-	@echo "  make start         - Start in background mode"
-	@echo "  make stop          - Stop application"
-	@echo "  make restart       - Restart application"
-	@echo "  make status        - Show application status"
-	@echo "  make logs          - Show logs in real-time"
-	@echo "  make clean         - Clean built files"
-	@echo "  make check-port    - Check if port is in use"
-	@echo "  make deps          - Install dependencies"
-	@echo "  make test          - Run tests"
-	@echo "  make fmt           - Format code"
-	@echo "  make lint          - Run linter"
+	@echo "  make start          - Start application in background"
+	@echo "  make stop           - Stop application"
+	@echo "  make restart        - Restart application"
+	@echo "  make status         - Show application status"
+	@echo "  make logs           - Show logs in real-time"
+	@echo "  make clean          - Clean logs and PID files"
 	@echo ""
 
-
-
+# Setup sudo permissions
 setup-sudo:
 	@echo "$(RED)⚠️  WARNING: This command requires sudo privileges!$(NC)"
 	@echo "$(YELLOW)Run with: sudo make setup-sudo$(NC)"
@@ -97,55 +83,10 @@ EOF; \
 		exit 1; \
 	fi
 
-# Build application
-build:
-	@echo "$(GREEN)Building Caddy Manager...$(NC)"
-	@go build -o $(APP_NAME) .
-	@echo "$(GREEN)✓ Application built: $(APP_NAME)$(NC)"
-
-# Build for Linux AMD64
-build-linux-amd64:
-	@echo "$(GREEN)Building for Linux AMD64...$(NC)"
-	@GOOS=linux GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o caddy-manager-linux-amd64 .
-	@echo "$(GREEN)✓ Built: caddy-manager-linux-amd64$(NC)"
-
-# Build for macOS AMD64
-build-darwin-amd64:
-	@echo "$(GREEN)Building for macOS AMD64...$(NC)"
-	@GOOS=darwin GOARCH=amd64 CGO_ENABLED=0 go build -ldflags="-s -w" -o caddy-manager-darwin-amd64 .
-	@echo "$(GREEN)✓ Built: caddy-manager-darwin-amd64$(NC)"
-
-# Build for macOS ARM64
-build-darwin-arm64:
-	@echo "$(GREEN)Building for macOS ARM64...$(NC)"
-	@GOOS=darwin GOARCH=arm64 CGO_ENABLED=0 go build -ldflags="-s -w" -o caddy-manager-darwin-arm64 .
-	@echo "$(GREEN)✓ Built: caddy-manager-darwin-arm64$(NC)"
-
-
-
-# Build for all platforms
-build-all:
-	@echo "$(GREEN)Building for all platforms...$(NC)"
-	$(MAKE) build-linux-amd64
-	$(MAKE) build-darwin-amd64
-	$(MAKE) build-darwin-arm64
-
-	@echo "$(GREEN)✓ All builds completed$(NC)"
-
-# Create release packages
-release-packages:
-	@echo "$(GREEN)Creating release packages...$(NC)"
-	$(MAKE) build-all
-	@tar -czf caddy-manager-linux-amd64.tar.gz caddy-manager-linux-amd64 README.md env.example SUDO_SETUP.md
-	@tar -czf caddy-manager-darwin-amd64.tar.gz caddy-manager-darwin-amd64 README.md env.example SUDO_SETUP.md
-	@tar -czf caddy-manager-darwin-arm64.tar.gz caddy-manager-darwin-arm64 README.md env.example SUDO_SETUP.md
-
-	@echo "$(GREEN)✓ Release packages created$(NC)"
-
-# Run in development mode
-dev:
-	@echo "$(GREEN)Starting in development mode...$(NC)"
-	@echo "$(YELLOW)Use Ctrl+C to stop$(NC)"
+# Start application in background
+start:
+	@echo "$(GREEN)Starting Caddy Manager in background...$(NC)"
+	@mkdir -p backups
 	@if [ -f .env ]; then \
 		export $$(cat .env | xargs); \
 	else \
@@ -153,7 +94,12 @@ dev:
 		export CADDYFILE_PATH=./test-caddyfile; \
 		export PORT=$(PORT); \
 	fi; \
-	./$(APP_NAME)
+	nohup ./$(APP_NAME) > $(LOG_FILE) 2>&1 & echo $$! > $(PID_FILE)
+	@PID=$$(cat $(PID_FILE)); \
+	echo "$(GREEN)✓ Caddy Manager started with PID: $$PID$(NC)"; \
+	echo "$(GREEN)✓ Logs: $(LOG_FILE)$(NC)"; \
+	echo "$(GREEN)✓ URL: http://localhost:$(PORT)$(NC)"; \
+	echo "$(YELLOW)Check .env file for authentication credentials$(NC)"
 
 # Stop application
 stop:
@@ -178,24 +124,6 @@ stop:
 			echo "$(YELLOW)No process found on port $(PORT)$(NC)"; \
 		fi; \
 	fi
-
-# Start in background mode
-start: stop build
-	@echo "$(GREEN)Starting Caddy Manager in background...$(NC)"
-	@mkdir -p backups
-	@if [ -f .env ]; then \
-		export $$(cat .env | xargs); \
-	else \
-		echo "$(YELLOW).env file not found, using default values$(NC)"; \
-		export CADDYFILE_PATH=./test-caddyfile; \
-		export PORT=$(PORT); \
-	fi; \
-	nohup ./$(APP_NAME) > $(LOG_FILE) 2>&1 & echo $$! > $(PID_FILE)
-	@PID=$$(cat $(PID_FILE)); \
-	echo "$(GREEN)✓ Caddy Manager started with PID: $$PID$(NC)"; \
-	echo "$(GREEN)✓ Logs: $(LOG_FILE)$(NC)"; \
-	echo "$(GREEN)✓ URL: http://localhost:$(PORT)$(NC)"; \
-	echo "$(YELLOW)Check .env file for authentication credentials$(NC)"
 
 # Restart application
 restart: stop start
@@ -227,54 +155,14 @@ status:
 logs:
 	@if [ -f $(LOG_FILE) ]; then \
 		echo "$(GREEN)Recent Caddy Manager logs:$(NC)"; \
-		echo "$(YELLOW)========================================$(NC)"; \
 		tail -f $(LOG_FILE); \
 	else \
-		echo "$(YELLOW)Log file not found: $(LOG_FILE)$(NC)"; \
+		echo "$(YELLOW)Log file not found$(NC)"; \
+		echo "$(YELLOW)Start the application first: make start$(NC)"; \
 	fi
 
-# Clean built files
+# Clean logs and PID files
 clean:
-	@echo "$(YELLOW)Cleaning up...$(NC)"
-	@rm -f $(APP_NAME)
-	@rm -f $(PID_FILE)
-	@rm -f $(LOG_FILE)
-	@echo "$(GREEN)✓ Cleanup completed$(NC)"
-
-# Check port
-check-port:
-	@echo "$(GREEN)Checking port $(PORT)...$(NC)"
-	@PID=$$(lsof -ti:$(PORT) 2>/dev/null || echo ""); \
-	if [ -n "$$PID" ]; then \
-		echo "$(YELLOW)Port $(PORT) is occupied by process $$PID$(NC)"; \
-	else \
-		echo "$(GREEN)Port $(PORT) is available$(NC)"; \
-	fi
-
-# Install dependencies
-deps:
-	@echo "$(GREEN)Installing dependencies...$(NC)"
-	@go mod tidy
-	@echo "$(GREEN)✓ Dependencies installed$(NC)"
-
-# Run tests
-test:
-	@echo "$(GREEN)Running tests...$(NC)"
-	@go test ./...
-	@echo "$(GREEN)✓ Tests completed$(NC)"
-
-# Format code
-fmt:
-	@echo "$(GREEN)Formatting code...$(NC)"
-	@go fmt ./...
-	@echo "$(GREEN)✓ Code formatted$(NC)"
-
-# Lint code
-lint:
-	@echo "$(GREEN)Running linter...$(NC)"
-	@if command -v golangci-lint >/dev/null 2>&1; then \
-		golangci-lint run; \
-		echo "$(GREEN)✓ Linting completed$(NC)"; \
-	else \
-		echo "$(YELLOW)golangci-lint not installed, skipping check$(NC)"; \
-	fi 
+	@echo "$(YELLOW)Cleaning Caddy Manager files...$(NC)"
+	@rm -f $(PID_FILE) $(LOG_FILE)
+	@echo "$(GREEN)✓ Cleaned PID and log files$(NC)" 
