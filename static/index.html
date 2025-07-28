@@ -586,8 +586,17 @@
         // Remove domain
         function removeDomain(index) {
             if (confirm('Are you sure you want to remove this domain?')) {
+                // Remove from domains array
                 domains.splice(index, 1);
-                displayDomains();
+                
+                // Remove the specific row from DOM without reloading the page
+                const tbody = document.getElementById('domainsTable');
+                const rows = tbody.querySelectorAll('tr');
+                if (rows[index]) {
+                    rows[index].remove();
+                }
+                
+                showNotification('Domain removed successfully!', 'success');
             }
         }
         
