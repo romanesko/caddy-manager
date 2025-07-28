@@ -34,6 +34,10 @@ print_step() {
     echo -e "${BLUE}[STEP]${NC} $1"
 }
 
+print_debug() {
+    echo -e "${BLUE}[DEBUG]${NC} $1"
+}
+
 # Function to detect OS and architecture
 detect_system() {
     print_status "Detecting system..."
@@ -109,12 +113,18 @@ download_and_extract() {
     ls -la "$TEMP_DIR"
     
     # Move files to target directory
+    print_debug "Mode: $mode"
+    print_debug "Target installation directory: $INSTALL_DIR"
+    print_debug "Target directory exists before mkdir: $([[ -d "$INSTALL_DIR" ]] && echo "YES" || echo "NO")"
+    
     if [[ "$mode" == "update" ]]; then
         # Update existing installation
         print_step "Updating existing installation..."
         
         # Create installation directory if it doesn't exist
+        print_debug "Creating installation directory: mkdir -p $INSTALL_DIR"
         mkdir -p "$INSTALL_DIR"
+        print_debug "Target directory exists after mkdir: $([[ -d "$INSTALL_DIR" ]] && echo "YES" || echo "NO")"
         
         # Backup existing .env if it exists
         if [[ -f "$INSTALL_DIR/.env" ]]; then
@@ -124,9 +134,16 @@ download_and_extract() {
         
         # Copy new files from temp directory, preserving .env
         # Check if files were extracted directly (not in a subdirectory)
+        print_debug "Checking for direct files in $TEMP_DIR (update mode)"
+        print_debug "caddy-manager exists: $([[ -f "$TEMP_DIR/caddy-manager" ]] && echo "YES" || echo "NO")"
+        print_debug "README.md exists: $([[ -f "$TEMP_DIR/README.md" ]] && echo "YES" || echo "NO")"
+        
         if [[ -f "$TEMP_DIR/caddy-manager" ]] && [[ -f "$TEMP_DIR/README.md" ]]; then
             print_status "Files extracted directly, copying to installation directory"
+            print_debug "Copying files from $TEMP_DIR to $INSTALL_DIR (update mode)"
             cp "$TEMP_DIR"/caddy-manager "$TEMP_DIR"/README.md "$TEMP_DIR"/env.example "$TEMP_DIR"/Makefile "$TEMP_DIR"/SUDO_SETUP.md "$INSTALL_DIR/"
+            print_debug "Files copied. Target directory contents:"
+            ls -la "$INSTALL_DIR" 2>/dev/null || print_debug "Cannot list target directory"
         else
             # Look for extracted directory
             extracted_dir=""
@@ -157,12 +174,21 @@ download_and_extract() {
         print_step "Creating new installation..."
         
         # Create installation directory
+        print_debug "Creating installation directory: mkdir -p $INSTALL_DIR"
         mkdir -p "$INSTALL_DIR"
+        print_debug "Target directory exists after mkdir: $([[ -d "$INSTALL_DIR" ]] && echo "YES" || echo "NO")"
         
         # Check if files were extracted directly (not in a subdirectory)
+        print_debug "Checking for direct files in $TEMP_DIR (install mode)"
+        print_debug "caddy-manager exists: $([[ -f "$TEMP_DIR/caddy-manager" ]] && echo "YES" || echo "NO")"
+        print_debug "README.md exists: $([[ -f "$TEMP_DIR/README.md" ]] && echo "YES" || echo "NO")"
+        
         if [[ -f "$TEMP_DIR/caddy-manager" ]] && [[ -f "$TEMP_DIR/README.md" ]]; then
             print_status "Files extracted directly, copying to installation directory"
+            print_debug "Copying files from $TEMP_DIR to $INSTALL_DIR (install mode)"
             cp "$TEMP_DIR"/caddy-manager "$TEMP_DIR"/README.md "$TEMP_DIR"/env.example "$TEMP_DIR"/Makefile "$TEMP_DIR"/SUDO_SETUP.md "$INSTALL_DIR/"
+            print_debug "Files copied. Target directory contents:"
+            ls -la "$INSTALL_DIR" 2>/dev/null || print_debug "Cannot list target directory"
         else
             # Look for extracted directory
             extracted_dir=""
@@ -228,6 +254,12 @@ main() {
     echo "Caddy Manager Installer"
     echo "======================="
     echo
+    
+    print_debug "Current directory: $(pwd)"
+    print_debug "Installation directory: $INSTALL_DIR"
+    print_debug "Current directory basename: $(basename "$(pwd)")"
+    print_debug "Installation directory exists: $([[ -d "$INSTALL_DIR" ]] && echo "YES" || echo "NO")"
+    print_debug "Current dir != install dir: $([[ "$(basename "$(pwd)")" != "$INSTALL_DIR" ]] && echo "YES" || echo "NO")"
     
     # Detect system
     detect_system
