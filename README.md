@@ -2,6 +2,18 @@
 
 Web application for managing Caddyfile with a beautiful Tabler UI interface.
 
+## 📦 Downloads
+
+### Latest Release: [v1.0.0](https://github.com/romanesko/caddy-manager/releases/tag/v1.0.0)
+
+**Pre-built binaries:**
+- **Linux AMD64**: [caddy-manager-linux-amd64.tar.gz](https://github.com/romanesko/caddy-manager/releases/download/v1.0.0/caddy-manager-linux-amd64.tar.gz)
+- **Linux ARM64**: [caddy-manager-linux-arm64.tar.gz](https://github.com/romanesko/caddy-manager/releases/download/v1.0.0/caddy-manager-linux-arm64.tar.gz)
+- **macOS AMD64**: [caddy-manager-darwin-amd64.tar.gz](https://github.com/romanesko/caddy-manager/releases/download/v1.0.0/caddy-manager-darwin-amd64.tar.gz)
+- **macOS ARM64**: [caddy-manager-darwin-arm64.tar.gz](https://github.com/romanesko/caddy-manager/releases/download/v1.0.0/caddy-manager-darwin-arm64.tar.gz)
+
+**All releases:** [GitHub Releases](https://github.com/romanesko/caddy-manager/releases)
+
 ## 🚀 Technologies
 
 - **Frontend**: Vanilla JavaScript + Tabler UI
@@ -24,7 +36,7 @@ Web application for managing Caddyfile with a beautiful Tabler UI interface.
 
 ### Quick Start (Pre-built Binaries)
 
-Download the latest release for your platform from [GitHub Releases](https://github.com/your-username/caddy-manager/releases):
+Download the latest release for your platform from [GitHub Releases](https://github.com/romanesko/caddy-manager/releases):
 
 1. **Download** the appropriate package for your platform
 2. **Extract** the archive
