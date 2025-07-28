@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Caddy Manager Installer Script
-# Version: 1.0.11
+# Version: 1.0.13
 
 set -e
 
@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 REPO="romanesko/caddy-manager"
-LATEST_VERSION="v1.0.11"
+LATEST_VERSION="v1.0.13"
 INSTALL_DIR="caddy-manager"
 
 # Function to print colored output
@@ -72,14 +72,18 @@ download_and_extract() {
     local os=$2
     local arch=$3
     local mode=$4  # "install" or "update"
+    local original_dir=$(pwd)
     
     local filename="caddy-manager-${os}-${arch}.tar.gz"
     local url="https://github.com/${REPO}/releases/download/${version}/${filename}"
     
     print_step "Downloading ${filename}..."
     
-    # Create temporary directory
+    # Create temporary directory for download and extraction
     local temp_dir=$(mktemp -d)
+    print_debug "Created temp directory: $temp_dir"
+    
+    # Change to temp directory for download
     cd "$temp_dir"
     
     # Download file
@@ -98,21 +102,18 @@ download_and_extract() {
         exit 1
     fi
     
-    # Create temporary directory for extraction
-    TEMP_DIR="/tmp/caddy-manager-installation"
-    rm -rf "$TEMP_DIR"
-    mkdir -p "$TEMP_DIR"
-    
     print_step "Extracting files..."
     
-    # Extract to temporary directory
-    tar -xzf "$filename" -C "$TEMP_DIR"
+    # Extract to current temp directory
+    tar -xzf "$filename"
     
     # Debug: list extracted files
     print_status "Extracted files:"
-    ls -la "$TEMP_DIR"
+    ls -la
     
-    # Move files to target directory
+    # Return to original directory for installation
+    cd "$original_dir"
+    
     print_debug "Mode: $mode"
     print_debug "Target installation directory: $INSTALL_DIR"
     print_debug "Target directory exists before mkdir: $([[ -d "$INSTALL_DIR" ]] && echo "YES" || echo "NO")"
@@ -134,20 +135,20 @@ download_and_extract() {
         
         # Copy new files from temp directory, preserving .env
         # Check if files were extracted directly (not in a subdirectory)
-        print_debug "Checking for direct files in $TEMP_DIR (update mode)"
-        print_debug "caddy-manager exists: $([[ -f "$TEMP_DIR/caddy-manager" ]] && echo "YES" || echo "NO")"
-        print_debug "README.md exists: $([[ -f "$TEMP_DIR/README.md" ]] && echo "YES" || echo "NO")"
+        print_debug "Checking for direct files in $temp_dir (update mode)"
+        print_debug "caddy-manager exists: $([[ -f "$temp_dir/caddy-manager" ]] && echo "YES" || echo "NO")"
+        print_debug "README.md exists: $([[ -f "$temp_dir/README.md" ]] && echo "YES" || echo "NO")"
         
-        if [[ -f "$TEMP_DIR/caddy-manager" ]] && [[ -f "$TEMP_DIR/README.md" ]]; then
+        if [[ -f "$temp_dir/caddy-manager" ]] && [[ -f "$temp_dir/README.md" ]]; then
             print_status "Files extracted directly, copying to installation directory"
-            print_debug "Copying files from $TEMP_DIR to $INSTALL_DIR (update mode)"
-            cp "$TEMP_DIR"/caddy-manager "$TEMP_DIR"/README.md "$TEMP_DIR"/env.example "$TEMP_DIR"/Makefile "$TEMP_DIR"/SUDO_SETUP.md "$INSTALL_DIR/"
+            print_debug "Copying files from $temp_dir to $INSTALL_DIR (update mode)"
+            cp "$temp_dir"/caddy-manager "$temp_dir"/README.md "$temp_dir"/env.example "$temp_dir"/Makefile "$temp_dir"/SUDO_SETUP.md "$INSTALL_DIR/"
             print_debug "Files copied. Target directory contents:"
             ls -la "$INSTALL_DIR" 2>/dev/null || print_debug "Cannot list target directory"
         else
             # Look for extracted directory
             extracted_dir=""
-            for dir in "$TEMP_DIR"/caddy-manager-*; do
+            for dir in "$temp_dir"/caddy-manager-*; do
                 if [[ -d "$dir" ]]; then
                     extracted_dir="$dir"
                     break
@@ -179,20 +180,20 @@ download_and_extract() {
         print_debug "Target directory exists after mkdir: $([[ -d "$INSTALL_DIR" ]] && echo "YES" || echo "NO")"
         
         # Check if files were extracted directly (not in a subdirectory)
-        print_debug "Checking for direct files in $TEMP_DIR (install mode)"
-        print_debug "caddy-manager exists: $([[ -f "$TEMP_DIR/caddy-manager" ]] && echo "YES" || echo "NO")"
-        print_debug "README.md exists: $([[ -f "$TEMP_DIR/README.md" ]] && echo "YES" || echo "NO")"
+        print_debug "Checking for direct files in $temp_dir (install mode)"
+        print_debug "caddy-manager exists: $([[ -f "$temp_dir/caddy-manager" ]] && echo "YES" || echo "NO")"
+        print_debug "README.md exists: $([[ -f "$temp_dir/README.md" ]] && echo "YES" || echo "NO")"
         
-        if [[ -f "$TEMP_DIR/caddy-manager" ]] && [[ -f "$TEMP_DIR/README.md" ]]; then
+        if [[ -f "$temp_dir/caddy-manager" ]] && [[ -f "$temp_dir/README.md" ]]; then
             print_status "Files extracted directly, copying to installation directory"
-            print_debug "Copying files from $TEMP_DIR to $INSTALL_DIR (install mode)"
-            cp "$TEMP_DIR"/caddy-manager "$TEMP_DIR"/README.md "$TEMP_DIR"/env.example "$TEMP_DIR"/Makefile "$TEMP_DIR"/SUDO_SETUP.md "$INSTALL_DIR/"
+            print_debug "Copying files from $temp_dir to $INSTALL_DIR (install mode)"
+            cp "$temp_dir"/caddy-manager "$temp_dir"/README.md "$temp_dir"/env.example "$temp_dir"/Makefile "$temp_dir"/SUDO_SETUP.md "$INSTALL_DIR/"
             print_debug "Files copied. Target directory contents:"
             ls -la "$INSTALL_DIR" 2>/dev/null || print_debug "Cannot list target directory"
         else
             # Look for extracted directory
             extracted_dir=""
-            for dir in "$TEMP_DIR"/caddy-manager-*; do
+            for dir in "$temp_dir"/caddy-manager-*; do
                 if [[ -d "$dir" ]]; then
                     extracted_dir="$dir"
                     break
@@ -215,16 +216,12 @@ download_and_extract() {
         fi
     fi
     
-    # Clean up temporary directory
-    rm -rf "$TEMP_DIR"
-    
     # Make binary executable
     chmod +x "$INSTALL_DIR/caddy-manager"
     
-    # Clean up
-    cd - > /dev/null
+    # Clean up temporary directory
+    print_debug "Cleaning up temp directory: $temp_dir"
     rm -rf "$temp_dir"
-    # Note: TEMP_DIR is already cleaned up above
 }
 
 # Function to show post-installation instructions
