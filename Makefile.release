@@ -4,7 +4,6 @@
 # Variables
 APP_NAME = caddy-manager
 PORT = 8000
-PID_FILE = .pid
 LOG_FILE = caddy-manager.log
 
 # Colors for output
@@ -27,7 +26,7 @@ help:
 	@echo "  make restart        - Restart application"
 	@echo "  make status         - Show application status"
 	@echo "  make logs           - Show logs in real-time"
-	@echo "  make clean          - Clean logs and PID files"
+	@echo "  make clean          - Clean log files"
 	@echo ""
 
 # Setup sudo permissions
@@ -94,9 +93,8 @@ start:
 		export CADDYFILE_PATH=./test-caddyfile; \
 		export PORT=$(PORT); \
 	fi; \
-	nohup ./$(APP_NAME) > $(LOG_FILE) 2>&1 & echo $$! > $(PID_FILE)
-	@PID=$$(cat $(PID_FILE)); \
-	echo "$(GREEN)✓ Caddy Manager started with PID: $$PID$(NC)"; \
+	nohup ./$(APP_NAME) > $(LOG_FILE) 2>&1 &
+	@echo "$(GREEN)✓ Caddy Manager started in background$(NC)"; \
 	echo "$(GREEN)✓ Logs: $(LOG_FILE)$(NC)"; \
 	echo "$(GREEN)✓ URL: http://localhost:$(PORT)$(NC)"; \
 	echo "$(YELLOW)Check .env file for authentication credentials$(NC)"
@@ -104,25 +102,13 @@ start:
 # Stop application
 stop:
 	@echo "$(YELLOW)Stopping Caddy Manager...$(NC)"
-	@if [ -f $(PID_FILE) ]; then \
-		PID=$$(cat $(PID_FILE)); \
-		if ps -p $$PID > /dev/null 2>&1; then \
-			kill $$PID; \
-			echo "$(GREEN)✓ Process $$PID stopped$(NC)"; \
-		else \
-			echo "$(YELLOW)Process $$PID not running$(NC)"; \
-		fi; \
-		rm -f $(PID_FILE); \
+	@PID=$$(lsof -ti:$(PORT) 2>/dev/null || echo ""); \
+	if [ -n "$$PID" ]; then \
+		echo "$(YELLOW)Found process $$PID on port $(PORT), stopping...$(NC)"; \
+		kill $$PID; \
+		echo "$(GREEN)✓ Process $$PID stopped$(NC)"; \
 	else \
-		echo "$(YELLOW)PID file not found, trying to find process on port $(PORT)...$(NC)"; \
-		PID=$$(lsof -ti:$(PORT) 2>/dev/null || echo ""); \
-		if [ -n "$$PID" ]; then \
-			echo "$(YELLOW)Found process $$PID on port $(PORT), stopping...$(NC)"; \
-			kill $$PID; \
-			echo "$(GREEN)✓ Process $$PID stopped$(NC)"; \
-		else \
-			echo "$(YELLOW)No process found on port $(PORT)$(NC)"; \
-		fi; \
+		echo "$(YELLOW)No process found on port $(PORT)$(NC)"; \
 	fi
 
 # Restart application
@@ -131,24 +117,13 @@ restart: stop start
 # Show application status
 status:
 	@echo "$(GREEN)Caddy Manager status:$(NC)"
-	@if [ -f $(PID_FILE) ]; then \
-		PID=$$(cat $(PID_FILE)); \
-		if ps -p $$PID > /dev/null 2>&1; then \
-			echo "$(GREEN)✓ Running with PID: $$PID$(NC)"; \
-			echo "$(GREEN)✓ Port: $(PORT)$(NC)"; \
-			echo "$(GREEN)✓ URL: http://localhost:$(PORT)$(NC)"; \
-		else \
-			echo "$(RED)✗ Process $$PID not running$(NC)"; \
-			rm -f $(PID_FILE); \
-		fi; \
+	@PID=$$(lsof -ti:$(PORT) 2>/dev/null || echo ""); \
+	if [ -n "$$PID" ]; then \
+		echo "$(GREEN)✓ Running with PID: $$PID$(NC)"; \
+		echo "$(GREEN)✓ Port: $(PORT)$(NC)"; \
+		echo "$(GREEN)✓ URL: http://localhost:$(PORT)$(NC)"; \
 	else \
-		echo "$(YELLOW)PID file not found$(NC)"; \
-		PID=$$(lsof -ti:$(PORT) 2>/dev/null || echo ""); \
-		if [ -n "$$PID" ]; then \
-			echo "$(YELLOW)Found process $$PID on port $(PORT) (not started via make)$(NC)"; \
-		else \
-			echo "$(RED)✗ Application not running$(NC)"; \
-		fi; \
+		echo "$(RED)✗ Application not running$(NC)"; \
 	fi
 
 # Show logs
@@ -161,8 +136,8 @@ logs:
 		echo "$(YELLOW)Start the application first: make start$(NC)"; \
 	fi
 
-# Clean logs and PID files
+# Clean logs
 clean:
 	@echo "$(YELLOW)Cleaning Caddy Manager files...$(NC)"
-	@rm -f $(PID_FILE) $(LOG_FILE)
-	@echo "$(GREEN)✓ Cleaned PID and log files$(NC)" 
+	@rm -f $(LOG_FILE)
+	@echo "$(GREEN)✓ Cleaned log files$(NC)" 
