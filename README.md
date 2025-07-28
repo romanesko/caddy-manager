@@ -98,7 +98,7 @@ mkdir -p caddy-manager && tar -xzf caddy-manager-darwin-amd64.tar.gz -C caddy-ma
 cd caddy-manager
 
 # macOS ARM64
-wget https://github.com/romanesko/caddy-manager/releases/download/v1.0.13/caddy-manager-darwin-arm64.tar.gz
+wget https://github.com/romanesko/caddy-manager/releases/download/latest/caddy-manager-darwin-arm64.tar.gz
 mkdir -p caddy-manager && tar -xzf caddy-manager-darwin-arm64.tar.gz -C caddy-manager
 cd caddy-manager
 ```
