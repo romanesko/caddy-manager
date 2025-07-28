@@ -169,8 +169,22 @@ main() {
     # Check if installation directory exists
     if [[ -d "$INSTALL_DIR" ]]; then
         print_warning "Directory '$INSTALL_DIR' already exists."
-        echo -n "Do you want to update to the latest version? (y/N): "
-        read -r response < /dev/tty
+        
+        # Try different methods to get user input
+        response=""
+        if [[ -t 0 ]]; then
+            # Interactive terminal
+            echo -n "Do you want to update to the latest version? (y/N): "
+            read -r response
+        elif [[ -e /dev/tty ]]; then
+            # Try /dev/tty
+            echo -n "Do you want to update to the latest version? (y/N): " > /dev/tty
+            read -r response < /dev/tty
+        else
+            # Non-interactive, assume no
+            print_warning "Non-interactive mode detected. Assuming 'no' for update."
+            response="n"
+        fi
         
         if [[ "$response" =~ ^[Yy]$ ]]; then
             print_status "Updating existing installation..."
