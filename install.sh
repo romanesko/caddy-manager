@@ -115,20 +115,27 @@ download_and_extract() {
         fi
         
         # Copy new files, preserving .env
-        extracted_dir=""
-        for dir in caddy-manager-*; do
-            if [[ -d "$dir" ]]; then
-                extracted_dir="$dir"
-                break
-            fi
-        done
-        
-        if [[ -n "$extracted_dir" ]]; then
-            print_status "Found extracted directory: $extracted_dir"
-            cp -r "$extracted_dir"/* "$INSTALL_DIR/"
+        # Check if files were extracted directly (not in a subdirectory)
+        if [[ -f "caddy-manager" ]] && [[ -f "README.md" ]]; then
+            print_status "Files extracted directly, copying to installation directory"
+            cp caddy-manager README.md env.example Makefile SUDO_SETUP.md "$INSTALL_DIR/"
         else
-            print_error "No extracted directory found"
-            exit 1
+            # Look for extracted directory
+            extracted_dir=""
+            for dir in caddy-manager-*; do
+                if [[ -d "$dir" ]]; then
+                    extracted_dir="$dir"
+                    break
+                fi
+            done
+            
+            if [[ -n "$extracted_dir" ]]; then
+                print_status "Found extracted directory: $extracted_dir"
+                cp -r "$extracted_dir"/* "$INSTALL_DIR/"
+            else
+                print_error "No extracted files or directory found"
+                exit 1
+            fi
         fi
         
         # Restore .env if it was backed up
@@ -140,20 +147,29 @@ download_and_extract() {
     else
         # New installation
         print_step "Creating new installation..."
-        extracted_dir=""
-        for dir in caddy-manager-*; do
-            if [[ -d "$dir" ]]; then
-                extracted_dir="$dir"
-                break
-            fi
-        done
         
-        if [[ -n "$extracted_dir" ]]; then
-            print_status "Found extracted directory: $extracted_dir"
-            mv "$extracted_dir" "$INSTALL_DIR"
+        # Check if files were extracted directly (not in a subdirectory)
+        if [[ -f "caddy-manager" ]] && [[ -f "README.md" ]]; then
+            print_status "Files extracted directly, creating installation directory"
+            mkdir -p "$INSTALL_DIR"
+            cp caddy-manager README.md env.example Makefile SUDO_SETUP.md "$INSTALL_DIR/"
         else
-            print_error "No extracted directory found"
-            exit 1
+            # Look for extracted directory
+            extracted_dir=""
+            for dir in caddy-manager-*; do
+                if [[ -d "$dir" ]]; then
+                    extracted_dir="$dir"
+                    break
+                fi
+            done
+            
+            if [[ -n "$extracted_dir" ]]; then
+                print_status "Found extracted directory: $extracted_dir"
+                mv "$extracted_dir" "$INSTALL_DIR"
+            else
+                print_error "No extracted files or directory found"
+                exit 1
+            fi
         fi
         
         # Copy env.example to .env
