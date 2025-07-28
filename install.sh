@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 REPO="romanesko/caddy-manager"
-LATEST_VERSION="v1.0.13"
+LATEST_VERSION="latest"
 INSTALL_DIR="caddy-manager"
 
 # Function to print colored output
