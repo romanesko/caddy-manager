@@ -34,11 +34,36 @@ Web application for managing Caddyfile with a beautiful Tabler UI interface.
 
 ## Installation
 
-### Quick Start (Pre-built Binaries)
+### Quick Start (Automatic Installer)
 
-Download the latest release for your platform from [GitHub Releases](https://github.com/romanesko/caddy-manager/releases):
+**One-command installation for all platforms:**
 
-#### Download and Extract
+```bash
+wget -O - https://raw.githubusercontent.com/romanesko/caddy-manager/main/install.sh | bash
+```
+
+**Or using curl:**
+
+```bash
+curl -sSL https://raw.githubusercontent.com/romanesko/caddy-manager/main/install.sh | bash
+```
+
+The installer will:
+- ✅ Automatically detect your system (Linux/macOS, AMD64/ARM64)
+- ✅ Download the correct version for your platform
+- ✅ Create `caddy-manager` directory
+- ✅ Set up configuration files
+- ✅ Make binary executable
+- ✅ Preserve existing `.env` file on updates
+
+**After installation:**
+1. `cd caddy-manager`
+2. Edit `.env` file with your settings
+3. `make start`
+
+### Manual Installation
+
+If you prefer manual installation, download from [GitHub Releases](https://github.com/romanesko/caddy-manager/releases):
 
 **Option 1: Download via browser**
 1. Go to [GitHub Releases](https://github.com/romanesko/caddy-manager/releases)
@@ -72,7 +97,7 @@ mkdir -p caddy-manager && tar -xzf caddy-manager-darwin-arm64.tar.gz -C caddy-ma
 cd caddy-manager
 ```
 
-#### Installation Steps
+**Manual Installation Steps:**
 
 1. **Make executable** (Linux/macOS):
    ```bash
