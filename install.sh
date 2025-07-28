@@ -67,6 +67,7 @@ download_and_extract() {
     local version=$1
     local os=$2
     local arch=$3
+    local mode=$4  # "install" or "update"
     
     local filename="caddy-manager-${os}-${arch}.tar.gz"
     local url="https://github.com/${REPO}/releases/download/${version}/${filename}"
@@ -99,7 +100,7 @@ download_and_extract() {
     tar -xzf "$filename"
     
     # Move files to target directory
-    if [[ -d "$INSTALL_DIR" ]]; then
+    if [[ "$mode" == "update" ]]; then
         # Update existing installation
         print_step "Updating existing installation..."
         
@@ -110,7 +111,12 @@ download_and_extract() {
         fi
         
         # Copy new files, preserving .env
-        cp -r caddy-manager-${os}-${arch}/* "$INSTALL_DIR/"
+        if [[ -d "caddy-manager-${os}-${arch}" ]]; then
+            cp -r caddy-manager-${os}-${arch}/* "$INSTALL_DIR/"
+        else
+            print_error "Extracted directory not found: caddy-manager-${os}-${arch}"
+            exit 1
+        fi
         
         # Restore .env if it was backed up
         if [[ -f "$INSTALL_DIR/.env.backup.$(date +%Y%m%d_%H%M%S)" ]]; then
@@ -121,7 +127,12 @@ download_and_extract() {
     else
         # New installation
         print_step "Creating new installation..."
-        mv caddy-manager-${os}-${arch} "$INSTALL_DIR"
+        if [[ -d "caddy-manager-${os}-${arch}" ]]; then
+            mv caddy-manager-${os}-${arch} "$INSTALL_DIR"
+        else
+            print_error "Extracted directory not found: caddy-manager-${os}-${arch}"
+            exit 1
+        fi
         
         # Copy env.example to .env
         if [[ -f "$INSTALL_DIR/env.example" ]]; then
@@ -188,7 +199,7 @@ main() {
         
         if [[ "$response" =~ ^[Yy]$ ]]; then
             print_status "Updating existing installation..."
-            download_and_extract "$LATEST_VERSION" "$OS" "$ARCH"
+            download_and_extract "$LATEST_VERSION" "$OS" "$ARCH" "update"
             print_status "Update completed!"
         else
             print_status "Installation cancelled."
@@ -196,7 +207,7 @@ main() {
         fi
     else
         print_status "Installing Caddy Manager..."
-        download_and_extract "$LATEST_VERSION" "$OS" "$ARCH"
+        download_and_extract "$LATEST_VERSION" "$OS" "$ARCH" "install"
     fi
     
     # Show instructions
