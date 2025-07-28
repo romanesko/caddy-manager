@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Caddy Manager Installer Script
-# Version: 1.0.13
+# Version: 1.0.14
 
 set -e
 
@@ -14,7 +14,7 @@ NC='\033[0m' # No Color
 
 # Configuration
 REPO="romanesko/caddy-manager"
-LATEST_VERSION="latest"
+LATEST_VERSION="v1.0.14"
 INSTALL_DIR="caddy-manager"
 
 # Function to print colored output
