@@ -4,13 +4,13 @@ Web application for managing Caddyfile with a beautiful Tabler UI interface.
 
 ## 📦 Downloads
 
-### Latest Release: [v1.0.5](https://github.com/romanesko/caddy-manager/releases/tag/v1.0.5)
+### Latest Release: [v1.0.6](https://github.com/romanesko/caddy-manager/releases/tag/v1.0.6)
 
 **Pre-built binaries:**
-- **Linux AMD64**: [caddy-manager-linux-amd64.tar.gz](https://github.com/romanesko/caddy-manager/releases/download/v1.0.5/caddy-manager-linux-amd64.tar.gz)
-- **Linux ARM64**: [caddy-manager-linux-arm64.tar.gz](https://github.com/romanesko/caddy-manager/releases/download/v1.0.5/caddy-manager-linux-arm64.tar.gz)
-- **macOS AMD64**: [caddy-manager-darwin-amd64.tar.gz](https://github.com/romanesko/caddy-manager/releases/download/v1.0.5/caddy-manager-darwin-amd64.tar.gz)
-- **macOS ARM64**: [caddy-manager-darwin-arm64.tar.gz](https://github.com/romanesko/caddy-manager/releases/download/v1.0.5/caddy-manager-darwin-arm64.tar.gz)
+- **Linux AMD64**: [caddy-manager-linux-amd64.tar.gz](https://github.com/romanesko/caddy-manager/releases/download/v1.0.6/caddy-manager-linux-amd64.tar.gz)
+- **Linux ARM64**: [caddy-manager-linux-arm64.tar.gz](https://github.com/romanesko/caddy-manager/releases/download/v1.0.6/caddy-manager-linux-arm64.tar.gz)
+- **macOS AMD64**: [caddy-manager-darwin-amd64.tar.gz](https://github.com/romanesko/caddy-manager/releases/download/v1.0.6/caddy-manager-darwin-amd64.tar.gz)
+- **macOS ARM64**: [caddy-manager-darwin-arm64.tar.gz](https://github.com/romanesko/caddy-manager/releases/download/v1.0.6/caddy-manager-darwin-arm64.tar.gz)
 
 **All releases:** [GitHub Releases](https://github.com/romanesko/caddy-manager/releases)
 
@@ -52,22 +52,22 @@ Download the latest release for your platform from [GitHub Releases](https://git
 **Option 2: Download via wget/curl**
 ```bash
 # Linux AMD64
-wget https://github.com/romanesko/caddy-manager/releases/download/v1.0.5/caddy-manager-linux-amd64.tar.gz
+wget https://github.com/romanesko/caddy-manager/releases/download/v1.0.6/caddy-manager-linux-amd64.tar.gz
 tar -xzf caddy-manager-linux-amd64.tar.gz
 cd caddy-manager-linux-amd64
 
 # Linux ARM64
-wget https://github.com/romanesko/caddy-manager/releases/download/v1.0.5/caddy-manager-linux-arm64.tar.gz
+wget https://github.com/romanesko/caddy-manager/releases/download/v1.0.6/caddy-manager-linux-arm64.tar.gz
 tar -xzf caddy-manager-linux-arm64.tar.gz
 cd caddy-manager-linux-arm64
 
 # macOS AMD64
-wget https://github.com/romanesko/caddy-manager/releases/download/v1.0.5/caddy-manager-darwin-amd64.tar.gz
+wget https://github.com/romanesko/caddy-manager/releases/download/v1.0.6/caddy-manager-darwin-amd64.tar.gz
 tar -xzf caddy-manager-darwin-amd64.tar.gz
 cd caddy-manager-darwin-amd64
 
 # macOS ARM64
-wget https://github.com/romanesko/caddy-manager/releases/download/v1.0.5/caddy-manager-darwin-arm64.tar.gz
+wget https://github.com/romanesko/caddy-manager/releases/download/v1.0.6/caddy-manager-darwin-arm64.tar.gz
 tar -xzf caddy-manager-darwin-arm64.tar.gz
 cd caddy-manager-darwin-arm64
 ```
