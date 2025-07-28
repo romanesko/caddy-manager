@@ -200,11 +200,14 @@ download_and_extract() {
 
 # Function to show post-installation instructions
 show_instructions() {
+    local install_path="$(pwd)/$INSTALL_DIR"
     echo
     print_status "Installation completed successfully!"
     echo
+    echo "Installation location: $install_path"
+    echo
     echo "Next steps:"
-    echo "1. cd $INSTALL_DIR"
+    echo "1. cd $install_path"
     echo "2. Edit .env file with your settings:"
     echo "   - CADDYFILE_PATH (default: /etc/caddy/Caddyfile)"
     echo "   - AUTH_USERNAME and AUTH_PASSWORD"
