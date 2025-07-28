@@ -113,6 +113,9 @@ download_and_extract() {
         # Update existing installation
         print_step "Updating existing installation..."
         
+        # Create installation directory if it doesn't exist
+        mkdir -p "$INSTALL_DIR"
+        
         # Backup existing .env if it exists
         if [[ -f "$INSTALL_DIR/.env" ]]; then
             cp "$INSTALL_DIR/.env" "$INSTALL_DIR/.env.backup.$(date +%Y%m%d_%H%M%S)"
