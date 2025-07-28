@@ -51,12 +51,12 @@ Download the latest release for your platform from [GitHub Releases](https://git
    ```
 5. **Setup sudo** (if needed):
    ```bash
-   sudo make -f Makefile.release setup-sudo
+   sudo make setup-sudo
    ```
 6. **Run**:
    ```bash
    # Start in background
-   make -f Makefile.release start
+   make start
    
    # Or run directly
    ./caddy-manager
@@ -134,15 +134,15 @@ The application will be available at `http://localhost:8000`
 
 ### Release Makefile Commands
 
-The release package includes `Makefile.release` with simplified commands:
+The release package includes `Makefile` with simplified commands:
 
-- `make -f Makefile.release setup-sudo` - Setup sudo permissions (requires sudo)
-- `make -f Makefile.release start` - Start application in background
-- `make -f Makefile.release stop` - Stop application
-- `make -f Makefile.release restart` - Restart application
-- `make -f Makefile.release status` - Show application status
-- `make -f Makefile.release logs` - Show logs in real-time
-- `make -f Makefile.release clean` - Clean logs and PID files
+- `make setup-sudo` - Setup sudo permissions (requires sudo)
+- `make start` - Start application in background
+- `make stop` - Stop application
+- `make restart` - Restart application
+- `make status` - Show application status
+- `make logs` - Show logs in real-time
+- `make clean` - Clean logs and PID files
 - `make logs` - Show logs in real-time
 - `make clean` - Clean built files
 
