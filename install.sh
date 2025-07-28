@@ -94,14 +94,19 @@ download_and_extract() {
         exit 1
     fi
     
+    # Create temporary directory for extraction
+    TEMP_DIR="/tmp/caddy-manager-installation"
+    rm -rf "$TEMP_DIR"
+    mkdir -p "$TEMP_DIR"
+    
     print_step "Extracting files..."
     
-    # Extract to current directory
-    tar -xzf "$filename"
+    # Extract to temporary directory
+    tar -xzf "$filename" -C "$TEMP_DIR"
     
     # Debug: list extracted files
     print_status "Extracted files:"
-    ls -la
+    ls -la "$TEMP_DIR"
     
     # Move files to target directory
     if [[ "$mode" == "update" ]]; then
@@ -114,15 +119,15 @@ download_and_extract() {
             print_status "Backed up existing .env file"
         fi
         
-        # Copy new files, preserving .env
+        # Copy new files from temp directory, preserving .env
         # Check if files were extracted directly (not in a subdirectory)
-        if [[ -f "caddy-manager" ]] && [[ -f "README.md" ]]; then
+        if [[ -f "$TEMP_DIR/caddy-manager" ]] && [[ -f "$TEMP_DIR/README.md" ]]; then
             print_status "Files extracted directly, copying to installation directory"
-            cp caddy-manager README.md env.example Makefile SUDO_SETUP.md "$INSTALL_DIR/"
+            cp "$TEMP_DIR"/caddy-manager "$TEMP_DIR"/README.md "$TEMP_DIR"/env.example "$TEMP_DIR"/Makefile "$TEMP_DIR"/SUDO_SETUP.md "$INSTALL_DIR/"
         else
             # Look for extracted directory
             extracted_dir=""
-            for dir in caddy-manager-*; do
+            for dir in "$TEMP_DIR"/caddy-manager-*; do
                 if [[ -d "$dir" ]]; then
                     extracted_dir="$dir"
                     break
@@ -148,15 +153,17 @@ download_and_extract() {
         # New installation
         print_step "Creating new installation..."
         
+        # Create installation directory
+        mkdir -p "$INSTALL_DIR"
+        
         # Check if files were extracted directly (not in a subdirectory)
-        if [[ -f "caddy-manager" ]] && [[ -f "README.md" ]]; then
-            print_status "Files extracted directly, creating installation directory"
-            mkdir -p "$INSTALL_DIR"
-            cp caddy-manager README.md env.example Makefile SUDO_SETUP.md "$INSTALL_DIR/"
+        if [[ -f "$TEMP_DIR/caddy-manager" ]] && [[ -f "$TEMP_DIR/README.md" ]]; then
+            print_status "Files extracted directly, copying to installation directory"
+            cp "$TEMP_DIR"/caddy-manager "$TEMP_DIR"/README.md "$TEMP_DIR"/env.example "$TEMP_DIR"/Makefile "$TEMP_DIR"/SUDO_SETUP.md "$INSTALL_DIR/"
         else
             # Look for extracted directory
             extracted_dir=""
-            for dir in caddy-manager-*; do
+            for dir in "$TEMP_DIR"/caddy-manager-*; do
                 if [[ -d "$dir" ]]; then
                     extracted_dir="$dir"
                     break
@@ -165,7 +172,7 @@ download_and_extract() {
             
             if [[ -n "$extracted_dir" ]]; then
                 print_status "Found extracted directory: $extracted_dir"
-                mv "$extracted_dir" "$INSTALL_DIR"
+                cp -r "$extracted_dir"/* "$INSTALL_DIR/"
             else
                 print_error "No extracted files or directory found"
                 exit 1
@@ -179,12 +186,16 @@ download_and_extract() {
         fi
     fi
     
+    # Clean up temporary directory
+    rm -rf "$TEMP_DIR"
+    
     # Make binary executable
     chmod +x "$INSTALL_DIR/caddy-manager"
     
     # Clean up
     cd - > /dev/null
     rm -rf "$temp_dir"
+    # Note: TEMP_DIR is already cleaned up above
 }
 
 # Function to show post-installation instructions
