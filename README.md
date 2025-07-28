@@ -45,31 +45,31 @@ Download the latest release for your platform from [GitHub Releases](https://git
 2. Download the appropriate `.tar.gz` file for your platform
 3. Extract the archive:
    ```bash
-   tar -xzf caddy-manager-linux-amd64.tar.gz
-   cd caddy-manager-linux-amd64
+   tar -xzf caddy-manager-linux-amd64.tar.gz -C . --transform 's/caddy-manager-linux-amd64/caddy-manager/'
+   cd caddy-manager
    ```
 
 **Option 2: Download via wget/curl**
 ```bash
 # Linux AMD64
 wget https://github.com/romanesko/caddy-manager/releases/download/v1.0.9/caddy-manager-linux-amd64.tar.gz
-tar -xzf caddy-manager-linux-amd64.tar.gz
-cd caddy-manager-linux-amd64
+tar -xzf caddy-manager-linux-amd64.tar.gz -C . --transform 's/caddy-manager-linux-amd64/caddy-manager/'
+cd caddy-manager
 
 # Linux ARM64
 wget https://github.com/romanesko/caddy-manager/releases/download/v1.0.9/caddy-manager-linux-arm64.tar.gz
-tar -xzf caddy-manager-linux-arm64.tar.gz
-cd caddy-manager-linux-arm64
+tar -xzf caddy-manager-linux-arm64.tar.gz -C . --transform 's/caddy-manager-linux-arm64/caddy-manager/'
+cd caddy-manager
 
 # macOS AMD64
 wget https://github.com/romanesko/caddy-manager/releases/download/v1.0.9/caddy-manager-darwin-amd64.tar.gz
-tar -xzf caddy-manager-darwin-amd64.tar.gz
-cd caddy-manager-darwin-amd64
+tar -xzf caddy-manager-darwin-amd64.tar.gz -C . --transform 's/caddy-manager-darwin-amd64/caddy-manager/'
+cd caddy-manager
 
 # macOS ARM64
 wget https://github.com/romanesko/caddy-manager/releases/download/v1.0.9/caddy-manager-darwin-arm64.tar.gz
-tar -xzf caddy-manager-darwin-arm64.tar.gz
-cd caddy-manager-darwin-arm64
+tar -xzf caddy-manager-darwin-arm64.tar.gz -C . --transform 's/caddy-manager-darwin-arm64/caddy-manager/'
+cd caddy-manager
 ```
 
 #### Installation Steps
