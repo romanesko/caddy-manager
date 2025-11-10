@@ -68,20 +68,40 @@ jobs:
     steps:
       - name: Download all artifacts
         uses: actions/download-artifact@v4
+        with:
+          path: artifacts
 
-      - name: List downloaded files
+      - name: Collect release files
         run: |
-          find . -name "*.tar.gz" -o -name "*.zip" | sort
-          ls -la
-          ls -la */ 2>/dev/null || echo "No subdirectories"
+          echo "Collecting all release files..."
+          mkdir -p release-files
+          find artifacts -name "*.tar.gz" -exec cp {} release-files/ \;
+          find artifacts -name "*.zip" -exec cp {} release-files/ \;
+          echo "Release files collected:"
+          ls -lh release-files/
+
+      - name: Delete existing release if exists
+        run: |
+          # Check if release exists and delete it
+          RELEASE_ID=$(gh api repos/${{ github.repository }}/releases/tags/${{ github.ref_name }} --jq .id 2>/dev/null || echo "")
+          if [ -n "$RELEASE_ID" ]; then
+            echo "Deleting existing release ${{ github.ref_name }} (ID: $RELEASE_ID)..."
+            gh api -X DELETE repos/${{ github.repository }}/releases/$RELEASE_ID || true
+            echo "Waiting for release deletion to propagate..."
+            sleep 2
+          else
+            echo "No existing release found for ${{ github.ref_name }}"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Release
         id: create_release
         uses: softprops/action-gh-release@v1
         with:
-          files: |
-            **/*.tar.gz
-            **/*.zip
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          files: release-files/*
           draft: false
           prerelease: false
           generate_release_notes: true
