@@ -47,7 +47,6 @@ jobs:
           echo "Building for ${{ matrix.os }}-${{ matrix.arch }}"
           go build -ldflags="-s -w" -o caddy-manager${{ matrix.ext }} .
           echo "Creating archive for ${{ matrix.os }}-${{ matrix.arch }}"
-          cp Makefile.release Makefile
           tar -czf caddy-manager-${{ matrix.os }}-${{ matrix.arch }}.tar.gz caddy-manager${{ matrix.ext }} README.md env.example SUDO_SETUP.md Makefile
           zip caddy-manager-${{ matrix.os }}-${{ matrix.arch }}.zip caddy-manager${{ matrix.ext }} README.md env.example SUDO_SETUP.md Makefile
           ls -la *.tar.gz *.zip
