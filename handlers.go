@@ -242,6 +242,20 @@ func getBackupDir() string {
 	// Create directory if it doesn't exist
 	if err := os.MkdirAll(dir, 0755); err != nil {
 		log.Printf("Warning: Failed to create backup directory: %v", err)
+		return dir // Return dir anyway, let createBackupFile handle the error
+	}
+
+	// Ensure directory is writable by checking if we can write a test file
+	testFile := filepath.Join(dir, ".write_test")
+	if err := os.WriteFile(testFile, []byte("test"), 0644); err != nil {
+		log.Printf("Warning: Backup directory is not writable: %v. Attempting to fix permissions...", err)
+		// Try to fix permissions (this may fail if we don't have permission)
+		if chmodErr := os.Chmod(dir, 0755); chmodErr != nil {
+			log.Printf("Warning: Failed to fix backup directory permissions: %v", chmodErr)
+		}
+	} else {
+		// Clean up test file
+		os.Remove(testFile)
 	}
 
 	return dir
@@ -259,14 +273,33 @@ func createBackupFile(caddyfilePath string) error {
 	
 	content, err := cmd.Output()
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to read Caddyfile: %w", err)
 	}
 
 	backupDir := getBackupDir()
+	
+	// Verify directory is writable before attempting to write
+	if info, err := os.Stat(backupDir); err != nil {
+		return fmt.Errorf("backup directory does not exist: %w", err)
+	} else if !info.IsDir() {
+		return fmt.Errorf("backup path is not a directory: %s", backupDir)
+	}
+	
+	// Check if directory is writable
+	testFile := filepath.Join(backupDir, ".write_test")
+	if err := os.WriteFile(testFile, []byte("test"), 0644); err != nil {
+		return fmt.Errorf("backup directory is not writable (permission denied): %w. Please ensure the directory '%s' is writable by the user running the service", err, backupDir)
+	}
+	os.Remove(testFile) // Clean up test file
+	
 	timestamp := time.Now().Format("20060102_150405")
 	backupPath := filepath.Join(backupDir, timestamp+".backup")
 
-	return os.WriteFile(backupPath, content, 0644)
+	if err := os.WriteFile(backupPath, content, 0644); err != nil {
+		return fmt.Errorf("failed to write backup file: %w", err)
+	}
+	
+	return nil
 }
 
 // PortStatus represents port status

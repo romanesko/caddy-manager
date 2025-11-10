@@ -111,6 +111,9 @@ install-service:
 		printf '[Unit]\nDescription=Caddy Manager - Web interface for managing Caddyfile\nAfter=network.target\n\n[Service]\nType=simple\nUser=%s\nWorkingDirectory=%s\nExecStart=%s/%s\nRestart=always\nRestartSec=5\nStandardOutput=journal\nStandardError=journal\nSyslogIdentifier=%s\nEnvironmentFile=%s/.env\n\n[Install]\nWantedBy=multi-user.target\n' "$$ORIGINAL_USER" "$(WORK_DIR)" "$(WORK_DIR)" "$(APP_NAME)" "$(SERVICE_NAME)" "$(WORK_DIR)" > /tmp/$(SERVICE_NAME).service; \
 		mv /tmp/$(SERVICE_NAME).service $(SERVICE_FILE); \
 		chmod 644 $(SERVICE_FILE); \
+		mkdir -p $(WORK_DIR)/backups; \
+		chown $$ORIGINAL_USER:$$ORIGINAL_USER $(WORK_DIR)/backups 2>/dev/null || true; \
+		chmod 755 $(WORK_DIR)/backups; \
 		systemctl daemon-reload; \
 		echo "$(GREEN)✅ Service installed successfully!$(NC)"; \
 		echo "$(GREEN)Service file: $(SERVICE_FILE)$(NC)"; \
@@ -166,7 +169,16 @@ start:
 			exit 1; \
 		fi; \
 		echo "$(GREEN)Starting Caddy Manager service...$(NC)"; \
+		ORIGINAL_USER=$$(grep "^User=" $(SERVICE_FILE) | cut -d'=' -f2); \
+		if [ -z "$$ORIGINAL_USER" ]; then \
+			ORIGINAL_USER=$$(who am i | awk '{print $$1}'); \
+		fi; \
+		if [ -z "$$ORIGINAL_USER" ]; then \
+			ORIGINAL_USER=$$(logname); \
+		fi; \
 		mkdir -p $(WORK_DIR)/backups; \
+		chown $$ORIGINAL_USER:$$ORIGINAL_USER $(WORK_DIR)/backups 2>/dev/null || true; \
+		chmod 755 $(WORK_DIR)/backups; \
 		systemctl start $(SERVICE_NAME); \
 		sleep 1; \
 		if systemctl is-active --quiet $(SERVICE_NAME); then \
