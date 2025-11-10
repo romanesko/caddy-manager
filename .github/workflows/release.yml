@@ -44,8 +44,8 @@ jobs:
           echo "Building for ${{ matrix.os }}-${{ matrix.arch }}"
           go build -ldflags="-s -w" -o caddy-manager${{ matrix.ext }} .
           echo "Creating archive for ${{ matrix.os }}-${{ matrix.arch }}"
-          tar -czf caddy-manager-${{ matrix.os }}-${{ matrix.arch }}.tar.gz caddy-manager${{ matrix.ext }} README.md env.example Makefile
-          zip caddy-manager-${{ matrix.os }}-${{ matrix.arch }}.zip caddy-manager${{ matrix.ext }} README.md env.example Makefile
+          tar -czf caddy-manager-${{ matrix.os }}-${{ matrix.arch }}.tar.gz caddy-manager${{ matrix.ext }} README.md env.example Makefile install.sh
+          zip caddy-manager-${{ matrix.os }}-${{ matrix.arch }}.zip caddy-manager${{ matrix.ext }} README.md env.example Makefile install.sh
           ls -la *.tar.gz *.zip
 
       - name: Upload artifacts
