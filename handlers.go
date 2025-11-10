@@ -33,11 +33,24 @@ type BackupInfo struct {
 func getCaddyfile(c *gin.Context) {
 	caddyfilePath := getCaddyfilePath()
 
-	// Read file with sudo
-	cmd := exec.Command("sudo", "cat", caddyfilePath)
+	// Read file with sudo - try /bin/cat first, then /usr/bin/cat
+	// Use -n flag for non-interactive mode (required when running from systemd)
+	var cmd *exec.Cmd
+	if _, err := exec.LookPath("/bin/cat"); err == nil {
+		cmd = exec.Command("sudo", "-n", "/bin/cat", caddyfilePath)
+	} else {
+		cmd = exec.Command("sudo", "-n", "/usr/bin/cat", caddyfilePath)
+	}
+	
 	content, err := cmd.Output()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to read Caddyfile: %v", err)})
+		// Try to get stderr for better error message
+		if exitError, ok := err.(*exec.ExitError); ok {
+			stderr := string(exitError.Stderr)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to read Caddyfile: %v (stderr: %s)", err, stderr)})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to read Caddyfile: %v", err)})
+		}
 		return
 	}
 
@@ -72,8 +85,9 @@ func saveCaddyfile(c *gin.Context) {
 		return
 	}
 
-	// Copy file with sudo
-	cmd := exec.Command("sudo", "cp", tempFile, caddyfilePath)
+	// Copy file with sudo (non-interactive mode for systemd)
+	// Use full path to cp to match sudoers configuration
+	cmd := exec.Command("sudo", "-n", "/bin/cp", tempFile, caddyfilePath)
 	if err := cmd.Run(); err != nil {
 		// Clean up temp file
 		os.Remove(tempFile)
@@ -95,11 +109,12 @@ func restartCaddy(c *gin.Context) {
 		return
 	}
 
-	// Restart Caddy with sudo
-	cmd := exec.Command("sudo", "systemctl", "reload", "caddy")
+	// Restart Caddy with sudo (non-interactive mode for systemd)
+	// Use full paths to match sudoers configuration
+	cmd := exec.Command("sudo", "-n", "/usr/bin/systemctl", "reload", "caddy")
 	if err := cmd.Run(); err != nil {
 		// Try alternative method with sudo
-		cmd = exec.Command("sudo", "caddy", "reload", "--config", getCaddyfilePath())
+		cmd = exec.Command("sudo", "-n", "/usr/bin/caddy", "reload", "--config", getCaddyfilePath())
 		if err := cmd.Run(); err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to restart Caddy: %v", err)})
 			return
@@ -225,8 +240,15 @@ func getBackupDir() string {
 }
 
 func createBackupFile(caddyfilePath string) error {
-	// Read file with sudo
-	cmd := exec.Command("sudo", "cat", caddyfilePath)
+	// Read file with sudo - try /bin/cat first, then /usr/bin/cat
+	// Use -n flag for non-interactive mode (required when running from systemd)
+	var cmd *exec.Cmd
+	if _, err := exec.LookPath("/bin/cat"); err == nil {
+		cmd = exec.Command("sudo", "-n", "/bin/cat", caddyfilePath)
+	} else {
+		cmd = exec.Command("sudo", "-n", "/usr/bin/cat", caddyfilePath)
+	}
+	
 	content, err := cmd.Output()
 	if err != nil {
 		return err
@@ -249,11 +271,24 @@ type PortStatus struct {
 func checkPorts(c *gin.Context) {
 	caddyfilePath := getCaddyfilePath()
 
-	// Read file with sudo
-	cmd := exec.Command("sudo", "cat", caddyfilePath)
+	// Read file with sudo - try /bin/cat first, then /usr/bin/cat
+	// Use -n flag for non-interactive mode (required when running from systemd)
+	var cmd *exec.Cmd
+	if _, err := exec.LookPath("/bin/cat"); err == nil {
+		cmd = exec.Command("sudo", "-n", "/bin/cat", caddyfilePath)
+	} else {
+		cmd = exec.Command("sudo", "-n", "/usr/bin/cat", caddyfilePath)
+	}
+	
 	content, err := cmd.Output()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to read Caddyfile: %v", err)})
+		// Try to get stderr for better error message
+		if exitError, ok := err.(*exec.ExitError); ok {
+			stderr := string(exitError.Stderr)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to read Caddyfile: %v (stderr: %s)", err, stderr)})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": fmt.Sprintf("Failed to read Caddyfile: %v", err)})
+		}
 		return
 	}
 
@@ -317,7 +352,8 @@ func checkPortAvailability(port string) string {
 func validateCaddyfile() error {
 	caddyfilePath := getCaddyfilePath()
 
-	// Проверяем синтаксис с помощью sudo caddy validate
-	cmd := exec.Command("sudo", "caddy", "validate", "--config", caddyfilePath)
+	// Проверяем синтаксис с помощью sudo caddy validate (non-interactive mode for systemd)
+	// Use full path to match sudoers configuration
+	cmd := exec.Command("sudo", "-n", "/usr/bin/caddy", "validate", "--config", caddyfilePath)
 	return cmd.Run()
 }

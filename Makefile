@@ -55,11 +55,13 @@ setup-sudo:
 		cat > /tmp/caddy-manager-sudoers << EOF; \
 # Caddy Manager sudo rules \
 $$CURRENT_USER ALL=(root) NOPASSWD: /usr/bin/caddy reload \
+$$CURRENT_USER ALL=(root) NOPASSWD: /usr/bin/caddy reload --config $$CADDYFILE_PATH \
 $$CURRENT_USER ALL=(root) NOPASSWD: /usr/bin/systemctl reload caddy \
 $$CURRENT_USER ALL=(root) NOPASSWD: /usr/bin/systemctl restart caddy \
 $$CURRENT_USER ALL=(root) NOPASSWD: /bin/cp $$CADDYFILE_PATH $$CADDYFILE_PATH.backup.* \
 $$CURRENT_USER ALL=(root) NOPASSWD: /bin/cp /tmp/caddyfile_temp $$CADDYFILE_PATH \
 $$CURRENT_USER ALL=(root) NOPASSWD: /usr/bin/cat $$CADDYFILE_PATH \
+$$CURRENT_USER ALL=(root) NOPASSWD: /bin/cat $$CADDYFILE_PATH \
 $$CURRENT_USER ALL=(root) NOPASSWD: /usr/bin/caddy validate --config $$CADDYFILE_PATH \
 EOF; \
 		if visudo -c -f /tmp/caddy-manager-sudoers; then \
