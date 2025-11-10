@@ -3,7 +3,7 @@
 
 # Variables
 APP_NAME = caddy-manager
-PORT = 8000
+PORT = $(shell grep -E '^PORT=' .env 2>/dev/null | cut -d '=' -f2 || echo "8000")
 SERVICE_NAME = caddy-manager
 SERVICE_FILE = /etc/systemd/system/$(SERVICE_NAME).service
 WORK_DIR = $(shell pwd)
