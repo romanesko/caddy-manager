@@ -142,7 +142,7 @@ download_and_extract() {
         if [[ -f "$temp_dir/caddy-manager" ]] && [[ -f "$temp_dir/README.md" ]]; then
             print_status "Files extracted directly, copying to installation directory"
             print_debug "Copying files from $temp_dir to $INSTALL_DIR (update mode)"
-            cp "$temp_dir"/caddy-manager "$temp_dir"/README.md "$temp_dir"/env.example "$temp_dir"/Makefile "$temp_dir"/SUDO_SETUP.md "$INSTALL_DIR/"
+            cp "$temp_dir"/caddy-manager "$temp_dir"/README.md "$temp_dir"/env.example "$temp_dir"/Makefile "$INSTALL_DIR/"
             print_debug "Files copied. Target directory contents:"
             ls -la "$INSTALL_DIR" 2>/dev/null || print_debug "Cannot list target directory"
         else
@@ -187,7 +187,7 @@ download_and_extract() {
         if [[ -f "$temp_dir/caddy-manager" ]] && [[ -f "$temp_dir/README.md" ]]; then
             print_status "Files extracted directly, copying to installation directory"
             print_debug "Copying files from $temp_dir to $INSTALL_DIR (install mode)"
-            cp "$temp_dir"/caddy-manager "$temp_dir"/README.md "$temp_dir"/env.example "$temp_dir"/Makefile "$temp_dir"/SUDO_SETUP.md "$INSTALL_DIR/"
+            cp "$temp_dir"/caddy-manager "$temp_dir"/README.md "$temp_dir"/env.example "$temp_dir"/Makefile "$INSTALL_DIR/"
             print_debug "Files copied. Target directory contents:"
             ls -la "$INSTALL_DIR" 2>/dev/null || print_debug "Cannot list target directory"
         else
