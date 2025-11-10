@@ -228,7 +228,15 @@ func getCaddyfilePath() string {
 func getBackupDir() string {
 	dir := os.Getenv("BACKUP_DIR")
 	if dir == "" {
-		dir = "./backups"
+		// Get current working directory (project directory)
+		workDir, err := os.Getwd()
+		if err != nil {
+			log.Printf("Warning: Failed to get working directory: %v, using ./backups", err)
+			dir = "./backups"
+		} else {
+			// Create absolute path to backups directory in project workdir
+			dir = filepath.Join(workDir, "backups")
+		}
 	}
 
 	// Create directory if it doesn't exist

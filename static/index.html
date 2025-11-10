@@ -258,11 +258,14 @@
                 this.target = target;
                 this.maxBody = maxBody;
                 this.timeout = timeout;
+                this.extraDirectives = []; // Store additional directives that aren't handled by standard fields
+                this.portFormat = 'host:port'; // 'host:port' or ':port' - original format of port specification
             }
             
             // Get port from target (for reverse_proxy)
             getPort() {
                 if (this.type === 'reverse_proxy' && this.target) {
+                    // Try to extract port from target (could be localhost:9000 or 127.0.0.1:9000)
                     const match = this.target.match(/:(\d+)/);
                     return match ? match[1] : '';
                 }
@@ -272,32 +275,138 @@
             // Set port for reverse_proxy
             setPort(port) {
                 if (this.type === 'reverse_proxy') {
-                    this.target = `127.0.0.1:${port}`;
+                    // Check if we should preserve :PORT format
+                    if (this.portFormat === ':port') {
+                        // Find the reverse_proxy line in extraDirectives to check original format
+                        const reverseProxyLine = this.extraDirectives.find(line => 
+                            line.trim().startsWith('reverse_proxy')
+                        );
+                        if (reverseProxyLine && reverseProxyLine.match(/reverse_proxy\s+:(\d+)/)) {
+                            // Original was :PORT format, but we store as host:port internally
+                            // The toCaddyfile() will handle the format conversion
+                            const hostMatch = this.target.match(/(localhost|127\.0\.0\.1)/);
+                            const host = hostMatch ? hostMatch[1] : '127.0.0.1';
+                            this.target = `${host}:${port}`;
+                            return;
+                        }
+                    }
+                    
+                    // Preserve the original format (localhost or 127.0.0.1)
+                    const hostMatch = this.target.match(/(localhost|127\.0\.0\.1)/);
+                    const host = hostMatch ? hostMatch[1] : '127.0.0.1';
+                    this.target = `${host}:${port}`;
                 }
             }
             
             toCaddyfile() {
                 let config = `${this.domain} {\n`;
                 
-                if (this.maxBody) {
-                    config += `        request_body {\n`;
-                    config += `                max_size ${this.maxBody}\n`;
-                    config += `        }\n`;
-                }
-                
-                if (this.type === 'reverse_proxy') {
-                    config += `        reverse_proxy ${this.target}`;
-                    if (this.timeout) {
-                        config += ` {\n`;
-                        config += `                transport http {\n`;
-                        config += `                        read_timeout ${this.timeout}s\n`;
-                        config += `                }\n`;
-                        config += `        }`;
+                // If we have extraDirectives, use them and update only the target/port
+                if (this.extraDirectives.length > 0) {
+                    let updatedDirectives = [];
+                    let inReverseProxyBlock = false;
+                    let reverseProxyBlockDepth = 0;
+                    
+                    for (let i = 0; i < this.extraDirectives.length; i++) {
+                        const line = this.extraDirectives[i];
+                        const trimmed = line.trim();
+                        
+                        // Track reverse_proxy block depth
+                        if (trimmed.startsWith('reverse_proxy')) {
+                            inReverseProxyBlock = true;
+                            reverseProxyBlockDepth = (line.match(/\{/g) || []).length;
+                            
+                            // Replace target in reverse_proxy line
+                            // Handle cases like: reverse_proxy /* localhost:9000
+                            // or: reverse_proxy localhost:9000 {
+                            // or: reverse_proxy :8999
+                            const targetMatch = trimmed.match(/reverse_proxy\s+(.+)/);
+                            if (targetMatch) {
+                                const rest = targetMatch[1];
+                                let updatedRest = rest;
+                                
+                                // Check if original had just :PORT format (from portFormat or line itself)
+                                const hadPortOnly = this.portFormat === ':port' || rest.match(/^:\d+/);
+                                
+                                if (hadPortOnly) {
+                                    // Preserve :PORT format - replace only the port number
+                                    updatedRest = updatedRest.replace(
+                                        /^:\d+/,
+                                        `:${this.getPort()}`
+                                    );
+                                    // Also handle case where :PORT appears after other tokens (like /* :8999)
+                                    updatedRest = updatedRest.replace(
+                                        /:\d+(?=\s|$|{)/g,
+                                        `:${this.getPort()}`
+                                    );
+                                } else {
+                                    // Replace localhost:PORT or 127.0.0.1:PORT with our target
+                                    updatedRest = updatedRest.replace(
+                                        /(localhost|127\.0\.0\.1):\d+/g,
+                                        this.target
+                                    );
+                                    // Replace any standalone :PORT patterns
+                                    updatedRest = updatedRest.replace(
+                                        /:\d+(?=\s|$|{)/g,
+                                        `:${this.getPort()}`
+                                    );
+                                }
+                                
+                                // Preserve the original line structure (indentation, etc.)
+                                const indent = line.match(/^\s*/)[0];
+                                const updatedLine = indent + 'reverse_proxy ' + updatedRest;
+                                updatedDirectives.push(updatedLine);
+                            } else {
+                                updatedDirectives.push(line);
+                            }
+                        } else {
+                            // Check if we're closing the reverse_proxy block
+                            if (inReverseProxyBlock && trimmed.includes('}')) {
+                                reverseProxyBlockDepth -= (trimmed.match(/\}/g) || []).length;
+                                if (reverseProxyBlockDepth <= 0) {
+                                    inReverseProxyBlock = false;
+                                    reverseProxyBlockDepth = 0;
+                                }
+                            }
+                            
+                            // Update max_size if maxBody changed
+                            if (trimmed.startsWith('max_size') && this.maxBody) {
+                                updatedDirectives.push(line.replace(
+                                    /max_size\s+.+/,
+                                    `max_size ${this.maxBody}`
+                                ));
+                            } else {
+                                updatedDirectives.push(line);
+                            }
+                        }
                     }
-                    config += `\n`;
-                } else if (this.type === 'file_server') {
-                    config += `        root * ${this.target}\n`;
-                    config += `        file_server browse\n`;
+                    
+                    // Output all directives
+                    for (const directive of updatedDirectives) {
+                        config += directive + '\n';
+                    }
+                } else {
+                    // No extra directives, use standard generation
+                    if (this.maxBody) {
+                        config += `        request_body {\n`;
+                        config += `                max_size ${this.maxBody}\n`;
+                        config += `        }\n`;
+                    }
+                    
+                    if (this.type === 'reverse_proxy') {
+                        config += `        reverse_proxy ${this.target}`;
+                        if (this.timeout) {
+                            config += ` {\n`;
+                            config += `                transport http {\n`;
+                            config += `                        read_timeout ${this.timeout}s\n`;
+                            config += `                }\n`;
+                            config += `        }`;
+                        }
+                        config += `\n`;
+                    } else if (this.type === 'file_server') {
+                        config += `        root * ${this.target}\n`;
+                        config += `        file_server browse\n`;
+                    }
                 }
                 
                 config += `}\n`;
@@ -314,18 +423,12 @@
             let inGlobalBlock = false;
             let inSnippet = false;
             let currentSnippet = '';
-            
-            // Track nested blocks
-            let inRequestBody = false;
-            let inReverseProxy = false;
-            let inTransport = false;
-            let inFileServer = false;
+            let domainStartLine = -1;
+            let domainLines = [];
             
             for (let i = 0; i < lines.length; i++) {
-                const line = lines[i].trim();
-                
-                // Skip comments and empty lines
-                if (!line || line.startsWith('#')) continue;
+                const originalLine = lines[i];
+                const line = originalLine.trim();
                 
                 // Count braces to track nesting
                 const openBraces = (line.match(/\{/g) || []).length;
@@ -364,7 +467,6 @@
                 if (inSnippet) continue;
                 
                 // Check for site block start (address with opening brace)
-                // According to docs: "The first line of the Caddyfile is always the address(es) of the site to serve"
                 if (line.includes('{') && braceCount === 1) {
                     // Extract address(es) - everything before the opening brace
                     const addressPart = line.split('{')[0].trim();
@@ -372,20 +474,25 @@
                     // Skip if this looks like a directive block (not an address)
                     if (isDirectiveBlock(line)) continue;
                     
+                    // Start new domain
                     currentDomain = new Domain(addressPart, 'reverse_proxy', '');
+                    domainStartLine = i;
+                    domainLines = [];
                     continue;
                 }
                 
-                // Process directives within site blocks
+                // Collect all lines for current domain (including comments and empty lines)
                 if (currentDomain && braceCount > 0) {
-                    processDirective(line, currentDomain);
+                    domainLines.push(originalLine);
                 }
                 
                 // Check for site block end
                 if (braceCount === 0 && currentDomain) {
+                    // Process collected lines
+                    processDomainLines(domainLines, currentDomain);
                     domains.push(currentDomain);
                     currentDomain = null;
-                    resetBlockState();
+                    domainLines = [];
                 }
             }
             
@@ -404,78 +511,152 @@
             return directiveKeywords.some(keyword => beforeBrace.includes(keyword));
         }
         
-        // Process individual directives
-        function processDirective(line, domain) {
-            const directive = line.split(/\s+/)[0];
+        // Process domain lines to extract information and store extra directives
+        function processDomainLines(lines, domain) {
+            let inRequestBody = false;
+            let inReverseProxy = false;
+            let inTransport = false;
+            let reverseProxyFound = false;
+            let fileServerFound = false;
+            let rootFound = false;
             
-            switch (directive) {
-                case 'request_body':
-                    inRequestBody = true;
-                    break;
-                    
-                case 'max_size':
-                    if (inRequestBody) {
-                        const maxBody = line.split('max_size')[1].trim();
-                        domain.maxBody = maxBody;
-                        inRequestBody = false;
-                    }
-                    break;
-                    
-                case 'reverse_proxy':
-                    inReverseProxy = true;
-                    // Extract target(s) - everything after 'reverse_proxy'
-                    const targetPart = line.split('reverse_proxy')[1].trim();
-                    // Take first target if multiple
-                    const firstTarget = targetPart.split(/\s+/)[0];
-                    domain.target = firstTarget;
-                    
-                    // Extract port for display
-                    const portMatch = firstTarget.match(/:(\d+)/);
-                    if (portMatch) {
-                        domain.port = portMatch[1];
-                    }
-                    break;
-                    
-                case 'transport':
-                    if (inReverseProxy && line.includes('transport http')) {
-                        inTransport = true;
-                    }
-                    break;
-                    
-                case 'read_timeout':
-                    if (inTransport) {
-                        const timeoutMatch = line.match(/read_timeout\s+(\d+)s/);
-                        if (timeoutMatch) {
-                            domain.timeout = timeoutMatch[1];
+            for (let i = 0; i < lines.length; i++) {
+                const originalLine = lines[i];
+                const line = originalLine.trim();
+                
+                // Skip empty lines and comments, but save them to extraDirectives
+                if (!line || line.startsWith('#')) {
+                    domain.extraDirectives.push(originalLine);
+                    continue;
+                }
+                
+                const directive = line.split(/\s+/)[0];
+                
+                switch (directive) {
+                    case 'request_body':
+                        inRequestBody = true;
+                        domain.extraDirectives.push(originalLine);
+                        break;
+                        
+                    case 'max_size':
+                        if (inRequestBody) {
+                            const maxBody = line.split('max_size')[1].trim();
+                            domain.maxBody = maxBody;
+                            inRequestBody = false;
+                            domain.extraDirectives.push(originalLine);
+                        } else {
+                            domain.extraDirectives.push(originalLine);
                         }
+                        break;
+                        
+                    case 'reverse_proxy':
+                        reverseProxyFound = true;
+                        inReverseProxy = true;
+                        domain.type = 'reverse_proxy';
+                        
+                        // Extract target - look for localhost:PORT or 127.0.0.1:PORT pattern
+                        // Handle cases like: reverse_proxy /* localhost:9000
+                        // or: reverse_proxy :8999
+                        const targetPart = line.split('reverse_proxy')[1].trim();
+                        
+                        // Check for just :PORT format (like :8999) first
+                        const portOnlyMatch = targetPart.match(/^:(\d+)/);
+                        if (portOnlyMatch) {
+                            domain.target = `127.0.0.1:${portOnlyMatch[1]}`;
+                            domain.portFormat = ':port'; // Remember original format
+                        } else {
+                            // Find address with port (localhost:PORT or 127.0.0.1:PORT)
+                            const addressMatch = targetPart.match(/(localhost|127\.0\.0\.1):(\d+)/);
+                            if (addressMatch) {
+                                domain.target = `${addressMatch[1]}:${addressMatch[2]}`;
+                                domain.portFormat = 'host:port';
+                            } else {
+                                // Fallback: try to extract first word that looks like address:port
+                                const words = targetPart.split(/\s+/);
+                                for (const word of words) {
+                                    // Check for :PORT pattern in any word
+                                    const wordPortMatch = word.match(/^:(\d+)$/);
+                                    if (wordPortMatch) {
+                                        domain.target = `127.0.0.1:${wordPortMatch[1]}`;
+                                        domain.portFormat = ':port';
+                                        break;
+                                    }
+                                    // Check for host:port pattern
+                                    if (word.match(/^[^:]+:\d+$/)) {
+                                        domain.target = word;
+                                        domain.portFormat = 'host:port';
+                                        break;
+                                    }
+                                }
+                                // If still not found, use first word
+                                if (!domain.target && words.length > 0) {
+                                    domain.target = words[0];
+                                    domain.portFormat = 'host:port';
+                                }
+                            }
+                        }
+                        
+                        domain.extraDirectives.push(originalLine);
+                        break;
+                        
+                    case 'transport':
+                        if (inReverseProxy && line.includes('transport http')) {
+                            inTransport = true;
+                        }
+                        domain.extraDirectives.push(originalLine);
+                        break;
+                        
+                    case 'read_timeout':
+                    case 'read_buffer':
+                    case 'write_buffer':
+                    case 'tls_insecure_skip_verify':
+                    case 'versions':
+                        if (inTransport) {
+                            if (directive === 'read_timeout') {
+                                const timeoutMatch = line.match(/read_timeout\s+(\d+)s/);
+                                if (timeoutMatch) {
+                                    domain.timeout = timeoutMatch[1];
+                                }
+                            }
+                        }
+                        domain.extraDirectives.push(originalLine);
+                        break;
+                        
+                    case 'root':
+                        rootFound = true;
+                        if (line.includes('root *')) {
+                            const target = line.split('root *')[1].trim();
+                            domain.type = 'file_server';
+                            domain.target = target;
+                        }
+                        domain.extraDirectives.push(originalLine);
+                        break;
+                        
+                    case 'file_server':
+                        fileServerFound = true;
+                        if (rootFound) {
+                            domain.type = 'file_server';
+                        }
+                        domain.extraDirectives.push(originalLine);
+                        break;
+                        
+                    default:
+                        // All other directives go to extraDirectives
+                        domain.extraDirectives.push(originalLine);
+                        break;
+                }
+                
+                // Check for closing braces that end blocks
+                if (line.includes('}')) {
+                    if (inTransport && line.match(/^\s*}\s*$/)) {
                         inTransport = false;
                         inReverseProxy = false;
                     }
-                    break;
-                    
-                case 'root':
-                    if (line.includes('root *')) {
-                        const target = line.split('root *')[1].trim();
-                        domain.type = 'file_server';
-                        domain.target = target;
+                    if (inRequestBody && line.match(/^\s*}\s*$/)) {
+                        inRequestBody = false;
                     }
-                    break;
-                    
-                case 'file_server':
-                    if (domain.type === 'file_server') {
-                        // file_server directive confirms this is a file server
-                        domain.type = 'file_server';
-                    }
-                    break;
+                }
             }
-        }
-        
-        // Reset block state
-        function resetBlockState() {
-            inRequestBody = false;
-            inReverseProxy = false;
-            inTransport = false;
-            inFileServer = false;
         }
         
         // Generate Caddyfile content from domains
